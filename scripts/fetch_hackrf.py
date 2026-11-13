@@ -26,8 +26,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEST = os.path.join(ROOT, "pc", "hackrf_bin")
 REPO = "greatscottgadgets/hackrf"
 RELEASE = "2026.01.3"
+# fftw3f.dll (GPL) braucht nur hackrf_sweep – nicht genutzt, nicht mitgenommen
 WIN_FILES = ("hackrf.dll", "hackrf_info.exe", "hackrf_spiflash.exe", "hackrf_transfer.exe",
-             "libusb-1.0.dll", "pthreadVC3.dll", "fftw3f.dll")
+             "libusb-1.0.dll", "pthreadVC3.dll")
+# Die Werkzeuge laufen als eigene Prozesse und brauchen die VC-Laufzeit; sie liegt schon (redistributierbar) in pc/libiio
+VCRT = os.path.join(ROOT, "pc", "libiio", "vcruntime140.dll")
 FW_FILES = ("hackrf_one_usb.bin", "hackrf_one_usb.dfu")
 
 
@@ -82,6 +85,8 @@ def fetch_windows(dest):
                 sys.exit(f"{f} fehlt im offiziellen Build {a['id']}")
             with z.open(names[f]) as src, open(os.path.join(dest, f), "wb") as dst:
                 shutil.copyfileobj(src, dst)
+    if os.path.isfile(VCRT):
+        shutil.copyfile(VCRT, os.path.join(dest, "vcruntime140.dll"))
     return {"artifact_id": a["id"], "created_at": a["created_at"], "commit": a["workflow_run"]["head_sha"]}
 
 

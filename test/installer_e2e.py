@@ -65,6 +65,8 @@ def main():
     ap.add_argument("--port", type=int, default=8795)
     ap.add_argument("--keep", action="store_true", help="Installation und Distro am Ende behalten")
     ap.add_argument("--reuse", action="store_true", help="vorhandene Installation/Distro weiterverwenden")
+    ap.add_argument("--exe", default="Muxwright.exe", help="Programmdatei im Installationsordner (HackRF-Edition: Muxwright-HackRF.exe)")
+    ap.add_argument("--expect-sdr", choices=["pluto", "hackrf"], help="HackRF-Edition: Vorgabegerät und geladene libhackrf prüfen")
     a = ap.parse_args()
     assert a.distro not in ("dablab", "Ubuntu-24.04"), "nie die Arbeits-Distro verwenden"
     base = pathlib.Path(a.dir)
@@ -84,7 +86,7 @@ def main():
         shutil.rmtree(base, ignore_errors=True)
     base.mkdir(parents=True, exist_ok=True)
     shots.mkdir(exist_ok=True)
-    if not (app / "Muxwright.exe").exists():
+    if not (app / a.exe).exists():
         say("installiere still")
         run([a.setup, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CURRENTUSER", f"/DIR={app}", f"/LOG={base / 'setup.log'}",
              "/LANG=de", "/TASKS="], timeout=900)
@@ -92,7 +94,7 @@ def main():
     bad = [str(p.relative_to(app)) for p in files if FORBIDDEN.search(p.name) and p.suffix.lower() in (".exe", ".dll", ".so", ".a", ".lib", "")]
     mb = sum(p.stat().st_size for p in files) / 1e6
     say(f"installiert: {len(files)} Dateien, {mb:.0f} MB")
-    assert (app / "Muxwright.exe").exists() and (app / "THIRD_PARTY.txt").exists() and (app / "pc" / "shop_data" / "shop.json").exists()
+    assert (app / a.exe).exists() and (app / "THIRD_PARTY.txt").exists() and (app / "pc" / "shop_data" / "shop.json").exists()
     assert (app / "pluto_fw" / "firmware" / "pluto.frm").exists() and (app / "wsl" / "setup_components.sh").exists()
     assert not bad, f"Codecs/Fremdprogramme im Paket: {bad}"
     assert not (app / "runtime" / "onboarding.json").exists()
@@ -100,7 +102,7 @@ def main():
     # ------------------------------------------------------------ 2. Server ohne echten Pluto
     env = {k: v for k, v in os.environ.items() if not k.startswith("DABLAB_")}
     log = open(base / "server.log", "wb")
-    srv = subprocess.Popen([str(app / "Muxwright.exe"), "--no-browser", "--port", str(a.port), "--uri", "ip:192.0.2.1",
+    srv = subprocess.Popen([str(app / a.exe), "--no-browser", "--port", str(a.port), "--uri", "ip:192.0.2.1",
                             "--agent", "http://192.0.2.1:8080", "--rx-uri", "ip:192.0.2.1", "--device-host", "192.0.2.1",
                             "--no-device-ssh", "--wsl-distro", a.distro, "--no-priority"],
                            cwd=app, stdout=log, stderr=subprocess.STDOUT, env=env, creationflags=NOWIN)
@@ -113,6 +115,24 @@ def main():
             time.sleep(0.5)
         st = api(a.port, "/api/state")
         assert st["onboarding"]["done"] is False, "frische Installation muss die Einrichtung verlangen"
+        if a.expect_sdr:
+            sdr = st.get("sdr") or {}
+            assert sdr.get("kind") == a.expect_sdr, f"Vorgabegerät {sdr.get('kind')} statt {a.expect_sdr}"
+            if a.expect_sdr == "hackrf":
+                for _ in range(30):                     # die Gerätesuche läuft im Hintergrund alle 5 s
+                    if (st.get("pluto") or {}).get("error") or (st.get("pluto") or {}).get("connected"):
+                        break
+                    time.sleep(1)
+                    st = api(a.port, "/api/state")
+                sdr = st.get("sdr") or {}
+                assert not sdr.get("lib_error"), f"libhackrf lädt nicht: {sdr.get('lib_error')}"
+                err = (st.get("pluto") or {}).get("error") or ""
+                assert "kein HackRF gefunden" in err or (st.get("pluto") or {}).get("connected"), f"HackRF-Zugriff: {err}"
+                assert (app / "pc" / "hackrf_bin" / "firmware" / "hackrf_one_usb.bin").exists()
+                assert not (app / "pc" / "hackrf_bin" / "fftw3f.dll").exists()
+                fw = api(a.port, "/api/firmware")
+                assert (fw.get("hackrf_image") or {}).get("ok"), f"offizielle Firmware im Paket ungültig: {fw.get('hackrf_image')}"
+                say("HackRF-Edition: libhackrf geladen, Gerätesuche läuft, offizielle Firmware im Paket geprüft")
         code = None
         try:
             api(a.port, "/api/rf", {"enabled": True})
