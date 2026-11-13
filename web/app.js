@@ -192,8 +192,11 @@ function updateHeader() {
 
   // Status-Chips
   const chip = (sel, kind, value, title) => { const c = $(sel); c.className = 'chip-st ' + kind; $('b', c).textContent = value; if (title) c.title = title; };
+  const devName = pl.kind === 'hackrf' ? 'HackRF' : 'Pluto';
+  $('[data-testid=st-pluto] small').textContent = devName;
   chip('[data-testid=st-pluto]', pl.connected ? 'ok' : 'bad', pl.connected ? (pl.temp_c != null ? `${D.fmtNum(pl.temp_c, 0)} °C` : T('verbunden')) : T('getrennt'),
-    pl.connected ? `Pluto ${pl.uri || ''} · FW ${pl.fw || '?'} · LO ${pl.lo_hz ? D.fmtMHz(pl.lo_hz) + ' MHz' : '–'} · ${T('Dämpfung')} ${pl.atten_db != null ? D.fmtDb(pl.atten_db) + ' dB' : '–'}` : T('Pluto nicht verbunden'));
+    pl.connected ? `${devName} ${pl.kind === 'hackrf' ? pl.model || '' : pl.uri || ''} · FW ${pl.fw || '?'} · LO ${pl.lo_hz ? D.fmtMHz(pl.lo_hz) + ' MHz' : '–'} · ${T('Dämpfung')} ${pl.atten_db != null ? D.fmtDb(pl.atten_db) + ' dB' : '–'}`
+      : pl.kind === 'hackrf' ? `${T('HackRF nicht verbunden')}${pl.error ? ' – ' + pl.error : ''}` : T('Pluto nicht verbunden'));
   const tools = missingTools(rn.tools);
   chip('[data-testid=st-runner]', rn.reachable ? (tools.length ? 'warn' : 'ok') : 'bad', rn.reachable ? (tools.length ? T('{n} fehlt', { n: tools.length }) : T('bereit')) : T('nicht erreichbar'),
     rn.reachable ? (tools.length ? T('Signalerzeugung (WSL) erreichbar · fehlend: {tools}', { tools: tools.join(', ') }) : T('Signalerzeugung (WSL) erreichbar')) : T('Signalerzeugung (WSL) nicht erreichbar'));

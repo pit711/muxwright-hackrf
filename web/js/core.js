@@ -2,7 +2,7 @@
 
 import { h, icon, api, toast, dialog, $$ } from './ui.js';
 import { diffPaths, ATTEN_SAFE, ATTEN_MAX, channelHz, fmtDb } from './dab.js';
-import { normalizeConfig, validateConfig, isLivePath, standardOf } from './standards.js';
+import { normalizeConfig, validateConfig, isLivePath, standardOf, setSdr } from './standards.js';
 import { T } from './i18n.js';
 
 export const S = {
@@ -299,7 +299,8 @@ export async function refreshState() {
 
 export function ingestState(d) {
   if (!d || typeof d !== 'object') return;
-  for (const k of ['tx', 'pluto', 'mac', 'runner', 'sweep', 'check', 'monitor', 'rf', 'jobs', 'devices', 'onboarding']) if (k in d) S.state[k] = d[k];
+  for (const k of ['tx', 'pluto', 'mac', 'runner', 'sweep', 'check', 'monitor', 'rf', 'jobs', 'devices', 'onboarding', 'sdr']) if (k in d) S.state[k] = d[k];
+  if (d.sdr) setSdr(d.sdr.kind);
   if (d.log) mergeLog(d.log);
   let redraw = false;
   if (d.config) redraw = setServerConfig(d.config);

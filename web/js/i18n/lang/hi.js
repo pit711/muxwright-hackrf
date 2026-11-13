@@ -1,5 +1,21 @@
 // Muxwright-Dashboard: हिन्दी
-export default {"Werkzeuge (70)":"टूल (70)",
+export default {"Sendegerät":"ट्रांसमीटर",
+"Sendegerät: {name}":"ट्रांसमीटर: {name}",
+"Welches Gerät sendet. Wechseln geht nur, wenn keine Sendung läuft.":"कौन सा डिवाइस प्रसारित करता है। बदलाव तभी संभव है जब कोई प्रसारण न चल रहा हो।",
+"Alle Standards; DVB-S/S2, DVB-T2, PAL u. a. mit dem Modulator der Muxwright-Firmware auf dem Pluto.":"सभी मानक; DVB-S/S2, DVB-T2, PAL आदि Pluto पर Muxwright फ़र्मवेयर के मॉड्यूलेटर के साथ।",
+"Offizielle Firmware und libhackrf von Great Scott Gadgets. DAB+, UKW, DVB-T, DVB-C (Annex A) und DATV, Modulator am PC, bis 20 MS/s.":"Great Scott Gadgets का आधिकारिक फ़र्मवेयर और libhackrf। DAB+, FM, DVB-T, DVB-C (Annex A) और DATV, मॉड्यूलेटर PC पर, 20 MS/s तक।",
+"HackRF nicht verbunden":"HackRF कनेक्ट नहीं है",
+"Firmware älter als die offizielle {rel} – Seite „Firmware“, Gerät „HackRF One“.":"फ़र्मवेयर आधिकारिक {rel} से पुराना है – पेज “फ़र्मवेयर”, डिवाइस “HackRF One”।",
+"Halbduplex: kein Kontrollempfang und keine RX-Vorschau während des Sendens.":"हाफ़-डुप्लेक्स: प्रसारण के दौरान कोई नियंत्रण रिसेप्शन और RX पूर्वावलोकन नहीं।",
+"Dämpfung 0 … 47 dB (ZF-Verstärkung); der HF-Verstärker bleibt immer aus.":"क्षीणन 0 … 47 dB (IF गेन); RF एम्पलीफ़ायर हमेशा बंद रहता है।",
+"8-Bit-DAC: für DVB-C lieber 64-QAM als 256-QAM.":"8-बिट DAC: DVB-C के लिए 256-QAM की बजाय 64-QAM बेहतर।",
+"Windows: Der HackRF braucht den WinUSB-Treiber (z. B. mit Zadig einrichten).":"Windows: HackRF को WinUSB ड्राइवर चाहिए (जैसे Zadig से इंस्टॉल करें)।",
+"Mit dem HackRF nicht möglich: dieser Modulator läuft nur auf dem Pluto":"HackRF के साथ संभव नहीं: यह मॉड्यूलेटर केवल Pluto पर चलता है",
+"{sps} MS/s liegt über der HackRF-Grenze von 20 MS/s":"{sps} MS/s HackRF की 20 MS/s सीमा से अधिक है",
+"HackRF: Modulator am PC, IQ per USB ({sps} MS/s)":"HackRF: मॉड्यूलेटर PC पर, IQ USB से ({sps} MS/s)",
+"nur mit dem Pluto":"केवल Pluto के साथ",
+"mit dem HackRF nicht möglich":"HackRF के साथ संभव नहीं",
+"Werkzeuge (70)":"टूल (70)",
 "SSH-Terminal erlauben (über diesen PC)":"SSH टर्मिनल की अनुमति दें (इस PC के ज़रिए)",
 "Nur im LAN-Modus. Der Fernseher wird per PIN freigeschaltet, die nur an diesem PC unter /hbbtv/ssh-pin erscheint.":"केवल LAN मोड में। टीवी को एक PIN से जोड़ा जाता है जो केवल इस PC पर /hbbtv/ssh-pin पर दिखता है।",
 "Erlaubte Rechner (leer = alle im eigenen LAN)":"अनुमत होस्ट (खाली = अपने LAN के सभी)",
@@ -1930,7 +1946,7 @@ export default {"Werkzeuge (70)":"टूल (70)",
 "Wiederverbindungen: {n}":"पुनः कनेक्शन: {n}",
 "Ton aus dem Stream":"स्ट्रीम से ऑडियो"
 };
-export const TXT = {
+export const TXT = {"c_hfw_wait":"पहले HackRF कनेक्ट करें","dev_hint_hackrf":"आप बिना कनेक्ट किए HackRF के भी आगे बढ़ सकते हैं; प्रसारण तभी शुरू होगा जब वह कनेक्ट होगा।","sdr":"ट्रांसमीटर","c_hackrf":"HackRF कनेक्ट है","c_hackrf_no":"कोई HackRF नहीं मिला – USB केबल और WinUSB ड्राइवर (Zadig) जाँचें।","c_hfw":"आधिकारिक HackRF फ़र्मवेयर","c_hfw_ok":"पहचाना गया: {fw}","c_hfw_old":"फ़र्मवेयर {fw} आधिकारिक {rel} से पुराना है – “फ़र्मवेयर” पेज पर अपडेट करें।","c_agent_na":"HackRF के साथ आवश्यक नहीं","done_hfw_d":"USB से DAB+, FM, DVB-T, DVB-C और DATV",
   "title": "सेटअप",
   "steps": [
     "स्वागत",

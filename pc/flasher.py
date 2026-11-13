@@ -15,6 +15,10 @@ Geräteauswahl (board, vom Nutzer gewählt, in flasher.json gespeichert):
                 sd_write kopiert sdimg/ auf einen Wechseldatenträger (FAT32); vorhandene gleichnamige Dateien werden
                 vorher nach runtime/firmware/sd_backup_<datum>/ gesichert, danach wird jede Datei per SHA-256 geprüft.
                 Der QSPI-Flash des Boards wird nie angefasst.
+  hackrf_one    HackRF One: nur die offizielle Firmware von Great Scott Gadgets (pc/hackrf_bin/firmware, aus dem
+                Release, scripts/fetch_hackrf.py) mit dem offiziellen hackrf_spiflash (docs „Updating Firmware“):
+                Sicherung „-r“ → „-w hackrf_one_usb.bin“ (mit der Kompatibilitätsprüfung des Werkzeugs, nie „-i“)
+                → „-R“ Neustart → hackrf_info meldet die neue Version.
 """
 import ctypes, datetime as dt, hashlib, json, os, re, shutil, struct, subprocess, threading, time, urllib.request, zlib
 
@@ -25,7 +29,32 @@ DFU_IDS = "0456:b673,0456:b674"
 BOARDS = {
     "pluto": {"method": "dfu"},
     "fishball7010": {"method": "sd", "dirs": (("pluto_fw", "firmware", "fishball7010"), ("pluto_fw", "out", "tezuka", "fishball"))},
+    "hackrf_one": {"method": "spiflash"},
 }
+HACKRF_FW = "hackrf_one_usb.bin"
+
+
+def hackrf_image(root):
+    """Official HackRF One firmware shipped in pc/hackrf_bin -> dict (ok, errors, version, sha256, size, path) or None."""
+    d = os.environ.get("MUXWRIGHT_HACKRF_DIR") or os.path.join(root, "pc", "hackrf_bin")
+    path = os.path.join(d, "firmware", HACKRF_FW)
+    if not os.path.isfile(path):
+        return None
+    errs, ver = [], None
+    try:
+        with open(os.path.join(d, "VERSIONS.json"), encoding="utf-8") as f:
+            v = json.load(f)
+        ver = v.get("release")
+        want = (v.get("files") or {}).get(f"firmware/{HACKRF_FW}")
+        if want != file_sha256(path):
+            errs.append("SHA-256 mismatch (VERSIONS.json)")
+    except (OSError, ValueError):
+        errs.append("VERSIONS.json missing – run scripts/fetch_hackrf.py")
+    for exe in ("hackrf_spiflash.exe", "hackrf_info.exe") if os.name == "nt" else ():
+        if not os.path.isfile(os.path.join(d, exe)):
+            errs.append(f"{exe} missing")
+    return {"ok": not errs, "errors": errs, "version": ver, "path": path, "dir": d, "size": os.path.getsize(path),
+            "sha256": file_sha256(path)}
 SD_REQUIRED = ("BOOT.bin", "uImage", "uramdisk.image.xz", "devicetree.dtb", "uEnv.txt")
 _SHA_CACHE = {}               # (Pfad, Größe, mtime_ns) -> SHA-256 der mitgelieferten Image-Dateien (nicht der Karte)
 
@@ -232,9 +261,11 @@ class Flasher:
             if spec["method"] == "sd":
                 im = sd_image(self.root, b)
                 sd[b] = im and {k: v for k, v in im.items() if k != "dir"}
+        hi = hackrf_image(self.root)
         return {"images": self.images(), "job": job, "running_fw": self.fw_now(), "history": s.get("history", [])[-10:],
                 "user_dir": self.fwdir, "board": board, "boards": {b: v["method"] for b, v in BOARDS.items()},
-                "sd_images": sd, "sd_drives": self.drives()}
+                "sd_images": sd, "sd_drives": self.drives(),
+                "hackrf_image": hi and {k: v for k, v in hi.items() if k not in ("dir", "path")}}
 
     def set_board(self, board):
         if board not in BOARDS:
@@ -250,6 +281,8 @@ class Flasher:
             return self.set_board(board)
         if action == "sd_write":
             return self._start_sd(board or self._state().get("board"), drive, confirm)
+        if action == "spiflash":
+            return self._start_spiflash(confirm)
         if action not in ("ram_test", "flash", "backup"):
             return 400, {"ok": False, "errors": ["unknown action"]}
         img = None
@@ -294,6 +327,85 @@ class Flasher:
                         "error": None, "started": time.time(), "finished": None}
         threading.Thread(target=self._run_sd, args=(board, im, d), daemon=True, name="fw-sd").start()
         return 200, {"ok": True}
+
+    def _start_spiflash(self, confirm):
+        im = hackrf_image(self.root)
+        if im is None:
+            return 404, {"ok": False, "errors": ["official HackRF firmware not found – run scripts/fetch_hackrf.py"]}
+        if not im["ok"]:
+            return 400, {"ok": False, "errors": im["errors"]}
+        if confirm is not True:
+            return 400, {"ok": False, "errors": ["Writing the HackRF firmware must be confirmed explicitly (confirm: true)"]}
+        with self.lock:
+            if self.job["running"]:
+                return 409, {"ok": False, "errors": ["A firmware job is already running"]}
+            self.job = {"running": True, "action": "spiflash", "image": "hackrf_one", "phase": "start", "lines": [],
+                        "result": None, "error": None, "started": time.time(), "finished": None}
+        threading.Thread(target=self._run_spiflash, args=(im,), daemon=True, name="fw-spiflash").start()
+        return 200, {"ok": True}
+
+    def _hackrf_tool(self, d, exe, args, timeout):
+        """Run an official hackrf tool, stream its output into the job log. -> (rc, output)."""
+        cmd = [os.path.join(d, exe + (".exe" if os.name == "nt" else "")), *args]
+        if not os.path.isfile(cmd[0]):
+            cmd[0] = exe                                    # Linux: tools from the distribution package
+        self._line("$ " + " ".join([exe, *args]))
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, creationflags=NOWIN)
+        out = (p.stdout or "") + (p.stderr or "")
+        for ln in out.splitlines()[-12:]:
+            if ln.strip():
+                self._line("  " + ln.strip())
+        return p.returncode, out
+
+    def _run_spiflash(self, im):
+        ok, err, extra = False, None, {}
+        held = False
+        d = im["dir"]
+        try:
+            if self.app is not None:
+                self._line("Transmission stopped, HackRF released for the flasher", "release")
+                self.app.hold(True)
+                held = True
+            time.sleep(1.0 * self.wait_scale)
+            os.makedirs(self.fwdir, exist_ok=True)
+            bak = os.path.join(self.fwdir, f"hackrf_backup_{dt.datetime.now():%Y%m%d_%H%M%S}.bin")
+            self._line("Backing up the current SPI flash", "backup")
+            rc, out = self._hackrf_tool(d, "hackrf_spiflash", ["-r", bak], 120)
+            if rc != 0 or not os.path.isfile(bak):
+                raise RuntimeError(f"backup failed (rc {rc}) – is the HackRF connected and the WinUSB driver installed?")
+            extra["backup"] = os.path.basename(bak)
+            self._line(f"Writing {HACKRF_FW} {im['version']} and resetting the HackRF", "write")
+            rc, out = self._hackrf_tool(d, "hackrf_spiflash", ["-w", im["path"], "-R"], 180)
+            if rc != 0:
+                raise RuntimeError(f"hackrf_spiflash failed (rc {rc}); the old firmware is in {os.path.basename(bak)}")
+            self._line("Waiting for the HackRF to come back", "verify")
+            fw = None
+            for _ in range(15):
+                time.sleep(1.0 * self.wait_scale)
+                rc, out = self._hackrf_tool(d, "hackrf_info", [], 30)
+                m = re.search(r"Firmware Version:\s*(\S+)", out)
+                if rc == 0 and m:
+                    fw = m.group(1)
+                    break
+            if fw is None:
+                raise RuntimeError("HackRF not found after the reset – press RESET or replug USB, then check hackrf_info")
+            extra["fw"] = fw
+            if im["version"] and fw != im["version"]:
+                raise RuntimeError(f"HackRF reports {fw}, expected {im['version']}")
+            ok = True
+        except Exception as e:
+            err = f"{e}"
+        finally:
+            if held:
+                self.app.hold(False)
+        s = self._state()
+        s.setdefault("history", []).append({"at": dt.datetime.now().isoformat(timespec="seconds"), "action": "spiflash",
+                                            "image": HACKRF_FW, "sha256": im["sha256"], "ok": ok, "error": err, **extra})
+        self._save_state(s)
+        self._line(("@@OK " if ok else "@@FAIL ") + (err or "spiflash"), "done")
+        with self.lock:
+            self.job.update(running=False, result="ok" if ok else "fail", error=err, finished=time.time(), **extra)
+        self.log("info" if ok else "error", f"Firmware spiflash: {'ok' if ok else err}")
 
     def _run_sd(self, board, im, d):
         ok, err, extra = False, None, {}

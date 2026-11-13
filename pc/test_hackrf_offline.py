@@ -136,7 +136,7 @@ def stream_tests():
 
 # ---------------------------------------------------------------------------- server API
 def server_tests():
-    from test_device_offline import Server, DVBT8, check as _c  # noqa: F401
+    from test_device_offline import Server, DVBT8
     from mock_agent import MockAgent
     empty = tempfile.mkdtemp(prefix="nohackrf_")
     os.environ["MUXWRIGHT_HACKRF_DIR"] = empty                 # libhackrf missing -> never real hardware
@@ -172,10 +172,182 @@ def server_tests():
         ag.stop()
 
 
+def e2e_tests():
+    """Real server process, fake libhackrf (tests_fake/server_fake_hackrf.py), test generator as IQ source."""
+    import json
+    import shutil
+    import urllib.error
+    import urllib.request
+    from test_device_offline import free_port, DVBT8
+    rt = tempfile.mkdtemp(prefix="mx_hackrf_e2e_")
+    out = os.path.join(rt, "fake.json")
+    port = free_port()
+    base = f"http://127.0.0.1:{port}"
+    env = dict(os.environ, FAKE_HACKRF_OUT=out)
+    p = subprocess.Popen([sys.executable, "-u", os.path.join(HERE, "tests_fake", "server_fake_hackrf.py"), "--port", str(port),
+                          "--sdr", "hackrf", "--source", "testgen", "--backend", "local", "--agent", "off", "--no-device-ssh",
+                          "--runtime", rt, "--no-priority"], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    def req(path, body=None, method=None):
+        data = json.dumps(body).encode() if body is not None else None
+        r = urllib.request.Request(base + path, data=data, method=method or ("POST" if data is not None else "GET"),
+                                   headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(r, timeout=30) as h:
+                return h.status, json.loads(h.read() or b"{}")
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read() or b"{}")
+
+    def fake():
+        try:
+            with open(out) as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return {}
+
+    def wait(pred, timeout=30):
+        t = time.time()
+        while time.time() - t < timeout:
+            try:
+                st = req("/api/state")[1]
+                if pred(st, fake()):
+                    return st
+            except (urllib.error.URLError, ConnectionError):
+                pass
+            time.sleep(0.5)
+        return req("/api/state")[1]
+
+    try:
+        st = wait(lambda s, f: s["pluto"]["connected"])
+        check("e2e: server connects the (fake) HackRF", st["pluto"]["connected"] and st["pluto"]["model"] == "HackRF One", st["pluto"])
+        s, r = req("/api/tx/start", {})
+        check("e2e: tx/start DAB -> 200 usb", s == 200 and r["path"] == "usb", (s, r))
+        st = wait(lambda s, f: s["tx"]["state"] == "running" and f.get("streaming"))
+        f = fake()
+        check("e2e: DAB stream running at 4,096×2 MS/s", st["tx"]["state"] == "running" and f.get("rate") == 8192000, (st["tx"], f))
+        time.sleep(1.5)
+        f = fake()
+        check("e2e: muted chain sends only zeros, IF gain 0", f.get("tail_nonzero") == 0 and f.get("txvga_last") == 0, f)
+        s, r = req("/api/rf", {"enabled": True, "atten_db": 30})
+        check("e2e: RF on refused before setup", s >= 400, (s, r))
+        s, r = req("/api/onboarding", {"mode": "lab", "accept": ["shielded", "no_broadcast_radiation", "terms", "privacy", "codecs"]})
+        check("e2e: setup done", s == 200, (s, r))
+        s, r = req("/api/rf", {"enabled": True, "atten_db": 30})
+        st = wait(lambda s, f: f.get("txvga_last") == 17 and f.get("tail_nonzero", 0) > 0, 15)
+        f = fake()
+        check("e2e: RF on, 30 dB -> txvga 17, signal flows", s == 200 and f.get("txvga_last") == 17 and f.get("tail_nonzero", 0) > 0, (s, r, f))
+        check("e2e: readback 30 dB, RF amp never on", st["pluto"]["atten_db"] == 30 and not any(f.get("amp", [1])), (st["pluto"], f))
+        s, r = req("/api/rf", {"atten_db": 60})
+        st = wait(lambda s, f: f.get("txvga_last") == 0 and s["pluto"]["atten_db"] == 47, 10)
+        check("e2e: 60 dB -> clamped to 47 (txvga 0), no resync loop", st["pluto"]["atten_db"] == 47, st["pluto"])
+        time.sleep(3)
+        log_ = " ".join(x.get("msg", "") for x in req("/api/state")[1]["log"][-30:])
+        check("e2e: no 'Dämpfung extern verändert' loop", "extern verändert" not in log_, log_[-300:])
+        st = req("/api/state")[1]
+        check("e2e: no underruns", st["tx"]["underruns"] == 0, st["tx"])
+        req("/api/tx/stop", {})
+        st = wait(lambda s, f: s["tx"]["state"] in ("idle", "off") and not f.get("streaming"), 15)
+        f = fake()
+        check("e2e: stop -> stream ended, IF gain 0", not f.get("streaming") and f.get("txvga_last") == 0, (st["tx"], f))
+        s, r = req("/api/config", DVBT8, "PUT")
+        check("e2e: DVB-T 8 MHz accepted (usb)", s == 200 and req("/api/state")[1]["rf"]["path"] == "usb", (s, r))
+        s, r = req("/api/tx/start", {})
+        st = wait(lambda s, f: s["tx"]["state"] == "running" and f.get("streaming"))
+        f = fake()
+        check("e2e: DVB-T 8 MHz streams at 9,142857 MS/s (no interpolation)", abs((f.get("rate") or 0) - 9142857) < 2 and f.get("freq_last") == 474000000, (s, r, st["tx"], f))
+        s, r = req("/api/sdr", {"kind": "pluto"})
+        check("e2e: device switch refused while on air", s == 409, (s, r))
+        req("/api/tx/stop", {})
+    finally:
+        p.terminate()
+        try:
+            o = p.communicate(timeout=10)[0].decode("utf-8", "replace")
+        except Exception:
+            p.kill()
+            o = ""
+        if "--verbose" in sys.argv:
+            print(o[-4000:])
+        shutil.rmtree(rt, ignore_errors=True)
+
+
+def flasher_tests():
+    """hackrf_spiflash flow with the official tools replaced by a stub (order, backup, version check, hold/release)."""
+    import hashlib
+    import json
+    import shutil
+    import flasher as F
+    d = tempfile.mkdtemp(prefix="mx_hrfw_")
+    os.makedirs(os.path.join(d, "firmware"))
+    fw = os.path.join(d, "firmware", F.HACKRF_FW)
+    with open(fw, "wb") as f:
+        f.write(b"\x01" * 4096)
+    for exe in ("hackrf_spiflash.exe", "hackrf_info.exe"):
+        open(os.path.join(d, exe), "wb").close()
+    sha = hashlib.sha256(open(fw, "rb").read()).hexdigest()
+    with open(os.path.join(d, "VERSIONS.json"), "w") as f:
+        json.dump({"release": "2026.01.3", "files": {f"firmware/{F.HACKRF_FW}": sha}}, f)
+    old = os.environ.get("MUXWRIGHT_HACKRF_DIR")
+    os.environ["MUXWRIGHT_HACKRF_DIR"] = d
+    rt = tempfile.mkdtemp(prefix="mx_hrrt_")
+
+    class App:
+        holds = []
+
+        def hold(self, on):
+            self.holds.append(on)
+
+    calls = []
+
+    def tool(dd, exe, args, timeout, reported="2026.01.3"):
+        calls.append((exe, *args))
+        if exe == "hackrf_spiflash" and args[0] == "-r":
+            open(args[1], "wb").write(b"old")
+        return 0, f"Firmware Version: {reported} (API:1.10)\n" if exe == "hackrf_info" else ""
+
+    try:
+        app = App()
+        fl = F.Flasher(os.path.dirname(HERE), rt, app=app, wait_scale=0.01)
+        st = fl.status()
+        check("flasher: hackrf_one board + official image listed", st["boards"].get("hackrf_one") == "spiflash"
+              and st["hackrf_image"]["ok"] and st["hackrf_image"]["version"] == "2026.01.3", st.get("hackrf_image"))
+        check("flasher: spiflash needs confirm", fl.start("spiflash")[0] == 400)
+        fl._hackrf_tool = tool
+        check("flasher: spiflash start", fl.start("spiflash", confirm=True)[0] == 200)
+        t0 = time.time()
+        while fl.job["running"] and time.time() - t0 < 10:
+            time.sleep(0.05)
+        check("flasher: job ok", fl.job["result"] == "ok", fl.job)
+        check("flasher: backup -r, then -w <bin> -R, then hackrf_info",
+              [c[:2] for c in calls[:2]] == [("hackrf_spiflash", "-r"), ("hackrf_spiflash", "-w")] and calls[1][2:] == (fw, "-R")
+              and calls[2][0] == "hackrf_info", calls)
+        check("flasher: never '-i' (skip compatibility check)", not any("-i" in c for c in calls))
+        check("flasher: device released and taken back", app.holds == [True, False], app.holds)
+        check("flasher: backup file kept", any(n.startswith("hackrf_backup_") for n in os.listdir(os.path.join(rt, "firmware"))))
+        calls.clear()
+        fl._hackrf_tool = lambda dd, exe, args, timeout: tool(dd, exe, args, timeout, reported="2024.02.1")
+        fl.start("spiflash", confirm=True)
+        t0 = time.time()
+        while fl.job["running"] and time.time() - t0 < 10:
+            time.sleep(0.05)
+        check("flasher: wrong version after reset -> fail", fl.job["result"] == "fail" and "2024.02.1" in (fl.job["error"] or ""), fl.job)
+        with open(fw, "ab") as f:
+            f.write(b"x")
+        check("flasher: tampered firmware rejected", fl.start("spiflash", confirm=True)[0] == 400)
+    finally:
+        if old is None:
+            os.environ.pop("MUXWRIGHT_HACKRF_DIR", None)
+        else:
+            os.environ["MUXWRIGHT_HACKRF_DIR"] = old
+        shutil.rmtree(d, ignore_errors=True)
+        shutil.rmtree(rt, ignore_errors=True)
+
+
 if __name__ == "__main__":
+    flasher_tests()
     unit_tests()
     device_tests()
     stream_tests()
     server_tests()
+    e2e_tests()
     print(f"\n{'ALLE OK' if not FAILS else f'{len(FAILS)} FEHLER: ' + ', '.join(FAILS)}")
     sys.exit(1 if FAILS else 0)

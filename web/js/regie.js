@@ -129,8 +129,10 @@ export function pageRegie() {
   const tiles = STD.STANDARDS.map(st => {
     const isActive = st.id === active;
     const info = tileInfo(st.id, cfg);
-    const status = isActive ? phase : 'idle';
-    const statusText = { onair: 'ON AIR', ready: T('STUMM'), muted: T('AN, STUMM'), starting: T('STARTET …'), error: T('FEHLER'), off: T('AUS'), idle: T('BEREIT') }[status];
+    // HackRF: Standards, deren Modulator nur auf dem Pluto läuft, sind gesperrt (wie pc/standards.py choose_path)
+    const blocked = STD.SDR === 'hackrf' && (isActive ? STD.requiredPath(cfg).path === 'none' : ['pal', 'atsc', 'isdbt', 'dtmb', 'dvbt2'].includes(st.id));
+    const status = blocked && !running ? 'blocked' : isActive ? phase : 'idle';
+    const statusText = { onair: 'ON AIR', ready: T('STUMM'), muted: T('AN, STUMM'), starting: T('STARTET …'), error: T('FEHLER'), off: T('AUS'), idle: T('BEREIT'), blocked: T('nur mit dem Pluto') }[status];
     const rf = rfFor(st.id);
     const est = isActive ? estDbm(cfg.rf) : null;
     const np = info.np;
@@ -143,7 +145,7 @@ export function pageRegie() {
       h('div.tile-params.mono', null, info.params),
       h('div.tile-level', null,
         isActive ? [h('span', null, icon('gauge'), h('b.mono', null, `${D.fmtDb(cfg.rf.atten_db)} dB`)), est != null ? h('span.mono', null, `≈ ${D.fmtNum(est, 1)} dBm`) : null,
-          h('span.muted', null, STD.requiredPath(cfg).path === 'pluto' ? T('Modulator auf dem Pluto') : 'USB-Streaming')]
+          h('span.muted', null, { pluto: T('Modulator auf dem Pluto'), none: T('nur mit dem Pluto') }[STD.requiredPath(cfg).path] || 'USB-Streaming')]
           : h('span.muted', null, T('inaktiv – Ein Klick schaltet um'))),
       h('div.tile-prog', null, h('small', null, T('Programm')), h('span', { title: info.prog }, info.prog)),
       np ? h('div.tile-np', { tid: `regie-np-${st.id}` }, icon('music'), h('b', null, np.title || ''), np.artist ? h('span', null, ` – ${np.artist}`) : null,
@@ -152,7 +154,7 @@ export function pageRegie() {
       h('footer', null,
         isActive && status === 'onair'
           ? h('button.btn.lg.mute', { type: 'button', tid: `regie-stop-${st.id}`, onclick: async () => { await txStop(); S.render(true); } }, icon('stop'), T('Stopp'))
-          : h('button.btn.lg.onair', { type: 'button', tid: `regie-onair-${st.id}`, disabled: status === 'starting', onclick: () => goOnAir(st.id) }, icon('power'), T('Auf Sendung')),
+          : h('button.btn.lg.onair', { type: 'button', tid: `regie-onair-${st.id}`, disabled: status === 'starting' || status === 'blocked', title: blocked ? T('Mit dem HackRF nicht möglich: dieser Modulator läuft nur auf dem Pluto') : null, onclick: () => goOnAir(st.id) }, icon('power'), T('Auf Sendung')),
         h('button.btn.ghost', { type: 'button', tid: `regie-edit-${st.id}`, onclick: () => {
           if (STD.standardOf(S.draft) !== st.id) { STD.setStandard(S.draft, st.id); const last = load('lastRf', {})[st.id]; if (plausible(st.id, last) && st.id !== 'dvbs') Object.assign(S.draft.rf, { channel: last.channel, freq_hz: last.freq_hz }); for (const k of ['channel', 'freq_hz']) if (S.draft.rf[k] !== S.server?.rf[k]) S.rfIntent.add(k); }
           location.hash = `#/${FIRST_PAGE[st.id]}`;

@@ -3,24 +3,25 @@
 import { h, icon, api, toast } from './ui.js';
 import { pickLang } from './onboarding_i18n.js';
 import { FW } from './fw_i18n.js';
+import { S } from './core.js';
 
 export const fwText = lang => ({ ...FW.en, ...(FW[lang] || {}) });
 
-const BOARD_KEYS = { pluto: 'board_pluto', fishball7010: 'board_fishball' };
+const BOARD_KEYS = { pluto: 'board_pluto', fishball7010: 'board_fishball', hackrf_one: 'board_hackrf' };
 
 /** Flasher-Bedienfeld (Seite „Firmware“ und Einrichtungsschritt „Gerät“) */
 export function fwPanel(lang, { compact = false } = {}) {
   const box = h('div.fw-panel', { tid: 'fw-panel' });
-  const st = { data: null, confirm: false, sdConfirm: false, drive: '', poll: null };
+  const st = { data: null, confirm: false, sdConfirm: false, hrConfirm: false, drive: '', poll: null };
   const post = async body => {
     try { await api('POST', '/api/firmware', body); }
     catch (e) { toast(e.message, 'error', 7000); }
     refresh();
   };
-  const boardOf = d => d.board || (/tezuka/i.test(d.running_fw || '') ? 'fishball7010' : 'pluto');
+  const boardOf = d => d.board || (S.state?.sdr?.kind === 'hackrf' ? 'hackrf_one' : /tezuka/i.test(d.running_fw || '') ? 'fishball7010' : 'pluto');
 
   const jobView = (t, job) => {
-    const phases = Object.entries(job.action === 'sd_write' ? t.sd_phases : t.phases);
+    const phases = Object.entries(job.action === 'sd_write' ? t.sd_phases : job.action === 'spiflash' ? t.hr_phases : t.phases);
     return h('div.fw-job', { tid: 'fw-job', class: job.running ? 'run' : job.result },
       h('ol.fw-phases', null, phases.map(([k, v]) => h('li', { class: k === job.phase ? 'on' : null }, v))),
       h('p.small', { tid: 'fw-job-result' }, job.running ? t.busy : job.result === 'ok' ? `${t.done} ✓` : `${t.failed}: ${job.error || ''}`),
@@ -97,15 +98,37 @@ export function fwPanel(lang, { compact = false } = {}) {
       h('p.small.muted', null, t.sd_steps)];
   };
 
+  const hackrfView = (t, d, job) => {
+    const im = d.hackrf_image;
+    const cb = h('input', { type: 'checkbox', tid: 'fw-hr-confirm' });
+    cb.checked = st.hrConfirm;
+    cb.addEventListener('change', () => { st.hrConfirm = cb.checked; draw(); });
+    return [
+      h('p.muted', null, t.hr_intro),
+      h('h4', null, t.images),
+      im ? h('div.fw-img', { tid: 'fw-hr-img', class: im.ok ? 'ok' : 'bad' },
+        h('div.onb-comp-head', null, icon(im.ok ? 'check' : 'x'), h('b', null, `hackrf_one_usb.bin ${im.version || ''}`), h('span.chip-sm', null, t.hr_official)),
+        h('p.small.muted', null, `${(im.size / 1024).toFixed(0)} KiB · SHA-256 ${im.sha256.slice(0, 12)}… · `, im.ok ? t.sd_ok : `${t.bad}: ${im.errors.join('; ')}`))
+        : h('p.small', { tid: 'fw-hr-img' }, icon('x'), ' ', t.hr_missing),
+      h('label.onb-item.small', null, cb, h('span', null, t.hr_confirm)),
+      h('div.inrow.wrap', null, h('button.btn.sm.primary', { type: 'button', tid: 'fw-hr-write',
+        disabled: job.running || !im?.ok || !st.hrConfirm || null,
+        onclick: () => post({ action: 'spiflash', confirm: st.hrConfirm }) }, icon('upload'), t.b_hr)),
+      job.action === 'spiflash' ? jobView(t, job) : null,
+      h('p.small.muted', null, t.hr_recovery)];
+  };
+
   const draw = () => {
     const t = fwText(lang), d = st.data;
     if (!d) { box.replaceChildren(h('p.muted', null, '…')); return; }
     const job = d.job || {}, board = boardOf(d);
-    const sd = (d.boards || {})[board] === 'sd';
+    const method = (d.boards || {})[board];
     box.replaceChildren(...[
-      h('p', null, icon('chip'), ' ', h('b', null, t.running + ': '), h('span.mono', { tid: 'fw-running' }, d.running_fw || t.none)),
+      method === 'spiflash'
+        ? h('p', null, icon('chip'), ' ', h('b', null, t.hr_running + ': '), h('span.mono', { tid: 'fw-running' }, S.state?.sdr?.kind === 'hackrf' && d.running_fw ? d.running_fw : t.hr_none))
+        : h('p', null, icon('chip'), ' ', h('b', null, t.running + ': '), h('span.mono', { tid: 'fw-running' }, S.state?.sdr?.kind !== 'hackrf' && d.running_fw || t.none)),
       boardPicker(t, d, board),
-      ...(sd ? sdView(t, d, job, board) : plutoView(t, d, job)),
+      ...(method === 'sd' ? sdView(t, d, job, board) : method === 'spiflash' ? hackrfView(t, d, job) : plutoView(t, d, job)),
       !compact && d.history?.length ? h('details', null, h('summary', null, t.history),
         h('ul.small', { tid: 'fw-history' }, d.history.slice().reverse().map(x => h('li', null, `${x.at.replace('T', ' ')} · ${x.action} · ${x.image || ''}${x.drive ? ' → ' + x.drive : ''} · ${x.ok ? '✓' : '✗ ' + (x.error || '')}`)))) : null].filter(Boolean));
   };
@@ -122,5 +145,5 @@ export function fwPanel(lang, { compact = false } = {}) {
 
 export function pageFirmware() {
   const lang = pickLang(), t = fwText(lang);
-  return h('div.page-stack', { tid: 'page-firmware' }, h('section.card', null, h('h3', null, icon('chip'), ' ', t.h), fwPanel(lang)));
+  return h('div.page-stack', { tid: 'page-firmware' }, h('section.card', null, h('h3', null, icon('chip'), ' ', S.state?.sdr?.kind === 'hackrf' ? t.hr_h : t.h), fwPanel(lang)));
 }

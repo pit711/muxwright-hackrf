@@ -7,6 +7,8 @@ export const RTL = new Set(['ar']);
 
 export const TXT = {
   de: {
+    c_hfw_wait: "erst den HackRF anschließen", dev_hint_hackrf: "Du kannst auch ohne angeschlossenen HackRF weitermachen; gesendet wird erst, wenn er verbunden ist.",
+    sdr: "Sendegerät", c_hackrf: "HackRF verbunden", c_hackrf_no: "Kein HackRF gefunden – USB-Kabel und WinUSB-Treiber (Zadig) prüfen.", c_hfw: "Offizielle HackRF-Firmware", c_hfw_ok: "erkannt: {fw}", c_hfw_old: "Firmware {fw} ist älter als die offizielle {rel} – auf der Seite „Firmware“ aktualisieren.", c_agent_na: "beim HackRF nicht nötig", done_hfw_d: "DAB+, UKW, DVB-T, DVB-C und DATV per USB",
     title: 'Einrichtung', steps: ['Willkommen', 'Gerät & Firmware', 'Betriebsart', 'Rechtliches', 'Fertig'],
     lang: 'Sprache', back: 'Zurück', next: 'Weiter', finish: 'Einrichtung abschließen', close: 'Schließen', recheck: 'Erneut prüfen',
     welcome_h: 'Willkommen bei Muxwright',
@@ -37,6 +39,8 @@ export const TXT = {
     },
   },
   en: {
+    c_hfw_wait: "connect the HackRF first", dev_hint_hackrf: "You can continue without a connected HackRF; transmitting starts only once it is connected.",
+    sdr: "Transmitter", c_hackrf: "HackRF connected", c_hackrf_no: "No HackRF found – check the USB cable and the WinUSB driver (Zadig).", c_hfw: "Official HackRF firmware", c_hfw_ok: "detected: {fw}", c_hfw_old: "Firmware {fw} is older than the official {rel} – update it on the \"Firmware\" page.", c_agent_na: "not needed with the HackRF", done_hfw_d: "DAB+, FM, DVB-T, DVB-C and DATV via USB",
     title: 'Setup', steps: ['Welcome', 'Device & firmware', 'Operating mode', 'Legal', 'Done'],
     lang: 'Language', back: 'Back', next: 'Next', finish: 'Finish setup', close: 'Close', recheck: 'Check again',
     welcome_h: 'Welcome to Muxwright',
@@ -67,6 +71,8 @@ export const TXT = {
     },
   },
   fr: {
+    c_hfw_wait: "connectez d'abord le HackRF", dev_hint_hackrf: "Vous pouvez continuer sans HackRF connecté ; l'émission ne démarre qu'une fois connecté.",
+    sdr: "Émetteur", c_hackrf: "HackRF connecté", c_hackrf_no: "Aucun HackRF trouvé – vérifiez le câble USB et le pilote WinUSB (Zadig).", c_hfw: "Firmware HackRF officiel", c_hfw_ok: "détecté : {fw}", c_hfw_old: "Le firmware {fw} est plus ancien que la version officielle {rel} – mettez-le à jour sur la page « Firmware ».", c_agent_na: "inutile avec le HackRF", done_hfw_d: "DAB+, FM, DVB-T, DVB-C et DATV par USB",
     title: 'Configuration', steps: ['Bienvenue', 'Appareil & firmware', 'Mode d’exploitation', 'Mentions légales', 'Terminé'],
     lang: 'Langue', back: 'Retour', next: 'Suivant', finish: 'Terminer la configuration', close: 'Fermer', recheck: 'Vérifier à nouveau',
     welcome_h: 'Bienvenue dans Muxwright',
@@ -97,6 +103,8 @@ export const TXT = {
     },
   },
   es: {
+    c_hfw_wait: "conecte primero el HackRF", dev_hint_hackrf: "Puede continuar sin un HackRF conectado; solo se transmite cuando esté conectado.",
+    sdr: "Transmisor", c_hackrf: "HackRF conectado", c_hackrf_no: "No se encontró ningún HackRF – compruebe el cable USB y el controlador WinUSB (Zadig).", c_hfw: "Firmware oficial del HackRF", c_hfw_ok: "detectado: {fw}", c_hfw_old: "El firmware {fw} es anterior al oficial {rel} – actualícelo en la página «Firmware».", c_agent_na: "no es necesario con el HackRF", done_hfw_d: "DAB+, FM, DVB-T, DVB-C y DATV por USB",
     title: 'Configuración', steps: ['Bienvenida', 'Equipo y firmware', 'Modo de uso', 'Aviso legal', 'Listo'],
     lang: 'Idioma', back: 'Atrás', next: 'Siguiente', finish: 'Finalizar configuración', close: 'Cerrar', recheck: 'Volver a comprobar',
     welcome_h: 'Bienvenido a Muxwright',
@@ -127,6 +135,8 @@ export const TXT = {
     },
   },
   it: {
+    c_hfw_wait: "collegare prima l'HackRF", dev_hint_hackrf: "Puoi continuare senza HackRF collegato; si trasmette solo quando è collegato.",
+    sdr: "Trasmettitore", c_hackrf: "HackRF collegato", c_hackrf_no: "Nessun HackRF trovato – controllare il cavo USB e il driver WinUSB (Zadig).", c_hfw: "Firmware HackRF ufficiale", c_hfw_ok: "rilevato: {fw}", c_hfw_old: "Il firmware {fw} è più vecchio dell'ufficiale {rel} – aggiornarlo nella pagina «Firmware».", c_agent_na: "non necessario con l'HackRF", done_hfw_d: "DAB+, FM, DVB-T, DVB-C e DATV via USB",
     title: 'Configurazione', steps: ['Benvenuto', 'Dispositivo e firmware', 'Modalità', 'Note legali', 'Fatto'],
     lang: 'Lingua', back: 'Indietro', next: 'Avanti', finish: 'Completa configurazione', close: 'Chiudi', recheck: 'Verifica di nuovo',
     welcome_h: 'Benvenuto in Muxwright',
@@ -157,6 +167,8 @@ export const TXT = {
     },
   },
   nl: {
+    c_hfw_wait: "sluit eerst de HackRF aan", dev_hint_hackrf: "Je kunt doorgaan zonder aangesloten HackRF; er wordt pas gezonden als hij verbonden is.",
+    sdr: "Zender", c_hackrf: "HackRF verbonden", c_hackrf_no: "Geen HackRF gevonden – controleer de USB-kabel en het WinUSB-stuurprogramma (Zadig).", c_hfw: "Officiële HackRF-firmware", c_hfw_ok: "gevonden: {fw}", c_hfw_old: "Firmware {fw} is ouder dan de officiële {rel} – werk hem bij op de pagina 'Firmware'.", c_agent_na: "niet nodig met de HackRF", done_hfw_d: "DAB+, FM, DVB-T, DVB-C en DATV via USB",
     title: 'Instellen', steps: ['Welkom', 'Apparaat & firmware', 'Bedrijfsmodus', 'Juridisch', 'Klaar'],
     lang: 'Taal', back: 'Terug', next: 'Volgende', finish: 'Instellen afronden', close: 'Sluiten', recheck: 'Opnieuw controleren',
     welcome_h: 'Welkom bij Muxwright',
@@ -187,6 +199,8 @@ export const TXT = {
     },
   },
   pl: {
+    c_hfw_wait: "najpierw podłącz HackRF", dev_hint_hackrf: "Możesz kontynuować bez podłączonego HackRF; nadawanie zacznie się dopiero po podłączeniu.",
+    sdr: "Nadajnik", c_hackrf: "HackRF podłączony", c_hackrf_no: "Nie znaleziono HackRF – sprawdź kabel USB i sterownik WinUSB (Zadig).", c_hfw: "Oficjalne firmware HackRF", c_hfw_ok: "wykryto: {fw}", c_hfw_old: "Firmware {fw} jest starsze niż oficjalne {rel} – zaktualizuj je na stronie „Firmware”.", c_agent_na: "niepotrzebne z HackRF", done_hfw_d: "DAB+, UKF, DVB-T, DVB-C i DATV przez USB",
     title: 'Konfiguracja', steps: ['Witamy', 'Urządzenie i firmware', 'Tryb pracy', 'Informacje prawne', 'Gotowe'],
     lang: 'Język', back: 'Wstecz', next: 'Dalej', finish: 'Zakończ konfigurację', close: 'Zamknij', recheck: 'Sprawdź ponownie',
     welcome_h: 'Witamy w Muxwright',

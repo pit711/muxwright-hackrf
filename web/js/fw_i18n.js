@@ -1,6 +1,8 @@
 // Texte des Firmware-Flashers je Sprache (weitere Sprachen: js/i18n/lang/<code>.js, export FW).
 export const FW = {
   de: {
+    hr_h: "Firmware", hr_running: "Läuft auf dem HackRF", hr_none: "kein HackRF verbunden",
+    board_hackrf: "HackRF One (offizielle Firmware, hackrf_spiflash)", hr_intro: "Für den HackRF One nutzt Muxwright ausschließlich die offizielle Firmware von Great Scott Gadgets aus dem Release-Paket und schreibt sie mit dem offiziellen Werkzeug hackrf_spiflash. Vorher wird der SPI-Flash gesichert.", hr_official: "offiziell (GSG)", hr_missing: "Offizielle HackRF-Firmware fehlt – scripts/fetch_hackrf.py ausführen.", hr_confirm: "Ich habe verstanden: hackrf_spiflash überschreibt die Firmware im SPI-Flash des HackRF. Das Gerät darf währenddessen nicht vom USB getrennt werden; die bisherige Firmware wird vorher nach runtime\\firmware gesichert.", b_hr: "Offizielle Firmware schreiben", hr_recovery: "Rückweg: Bleibt der HackRF stumm, mit gedrückter DFU-Taste einstecken, die .dfu-Datei aus dem Release mit dfu-util laden und danach erneut schreiben (offizielle Anleitung „Recovering the SPI Flash Firmware“).", hr_phases: {"release": "HackRF freigeben", "backup": "Sicherung", "write": "Schreiben + Neustart", "verify": "Prüfen", "done": "Ende"},
     h: 'Pluto-Firmware', intro: 'Für DVB-T, DVB-C, DVB-S/S2 und PAL braucht der Pluto die Muxwright-Firmware. Sie liegt fertig geprüft im Paket. Der Flasher testet sie zuerst nur im RAM (der Flash bleibt unberührt), erst danach kannst du sie dauerhaft schreiben.',
     running: 'Läuft auf dem Pluto', none: 'kein Pluto verbunden', images: 'Verfügbare Firmware', shipped: 'mitgeliefert', backup: 'Sicherung',
     ok: 'geprüft (md5, FIT, Pluto-Kennung)', bad: 'ungültig', tested: 'RAM-Test bestanden', untested: 'noch nicht im RAM getestet',
@@ -27,6 +29,8 @@ export const FW = {
     sd_phases: { backup: 'Sicherung', copy: 'Kopieren', verify: 'Prüfen', done: 'Ende' },
   },
   en: {
+    hr_h: "Firmware", hr_running: "Running on the HackRF", hr_none: "no HackRF connected",
+    board_hackrf: "HackRF One (official firmware, hackrf_spiflash)", hr_intro: "For the HackRF One, Muxwright only uses the official Great Scott Gadgets firmware from the release package and writes it with the official tool hackrf_spiflash. The SPI flash is backed up first.", hr_official: "official (GSG)", hr_missing: "Official HackRF firmware missing – run scripts/fetch_hackrf.py.", hr_confirm: "I understand: hackrf_spiflash overwrites the firmware in the HackRF's SPI flash. The device must not be unplugged meanwhile; the current firmware is backed up to runtime\\firmware first.", b_hr: "Write official firmware", hr_recovery: "Way back: if the HackRF stays silent, plug it in while holding the DFU button, load the .dfu file from the release with dfu-util and write again (official guide \"Recovering the SPI Flash Firmware\").", hr_phases: {"release": "Release HackRF", "backup": "Backup", "write": "Write + reset", "verify": "Verify", "done": "End"},
     h: 'Pluto firmware', intro: 'DVB-T, DVB-C, DVB-S/S2 and PAL need the Muxwright firmware on the Pluto. It comes tested in the package. The flasher first tests it in RAM only (flash untouched); only then can you write it permanently.',
     running: 'Running on the Pluto', none: 'no Pluto connected', images: 'Available firmware', shipped: 'included', backup: 'backup',
     ok: 'verified (md5, FIT, Pluto signature)', bad: 'invalid', tested: 'RAM test passed', untested: 'not yet tested in RAM',
@@ -53,6 +57,8 @@ export const FW = {
     sd_phases: { backup: 'Backup', copy: 'Copy', verify: 'Verify', done: 'End' },
   },
   fr: {
+    hr_h: "Firmware", hr_running: "En service sur le HackRF", hr_none: "aucun HackRF connecté",
+    board_hackrf: "HackRF One (firmware officiel, hackrf_spiflash)", hr_intro: "Pour le HackRF One, Muxwright utilise uniquement le firmware officiel de Great Scott Gadgets issu du paquet de release et l'écrit avec l'outil officiel hackrf_spiflash. La flash SPI est sauvegardée avant.", hr_official: "officiel (GSG)", hr_missing: "Firmware HackRF officiel manquant – exécuter scripts/fetch_hackrf.py.", hr_confirm: "J'ai compris : hackrf_spiflash écrase le firmware dans la flash SPI du HackRF. L'appareil ne doit pas être débranché pendant ce temps ; le firmware actuel est d'abord sauvegardé dans runtime\\firmware.", b_hr: "Écrire le firmware officiel", hr_recovery: "Retour : si le HackRF reste muet, branchez-le en maintenant le bouton DFU, chargez le fichier .dfu de la release avec dfu-util puis réécrivez (guide officiel « Recovering the SPI Flash Firmware »).", hr_phases: {"release": "Libérer le HackRF", "backup": "Sauvegarde", "write": "Écriture + redémarrage", "verify": "Vérification", "done": "Fin"},
     h: 'Firmware du Pluto', intro: 'DVB-T, DVB-C, DVB-S/S2 et PAL nécessitent le firmware Muxwright sur le Pluto. Il est fourni testé dans le paquet. Le flasheur le teste d’abord uniquement en RAM (flash intact) ; ensuite seulement vous pouvez l’écrire durablement.',
     running: 'Actif sur le Pluto', none: 'aucun Pluto connecté', images: 'Firmware disponible', shipped: 'fourni', backup: 'sauvegarde',
     ok: 'vérifié (md5, FIT, signature Pluto)', bad: 'invalide', tested: 'test RAM réussi', untested: 'pas encore testé en RAM',
@@ -79,6 +85,8 @@ export const FW = {
     sd_phases: { backup: 'Sauvegarde', copy: 'Copie', verify: 'Vérification', done: 'Fin' },
   },
   es: {
+    hr_h: "Firmware", hr_running: "En el HackRF", hr_none: "ningún HackRF conectado",
+    board_hackrf: "HackRF One (firmware oficial, hackrf_spiflash)", hr_intro: "Para el HackRF One, Muxwright usa solo el firmware oficial de Great Scott Gadgets del paquete de release y lo escribe con la herramienta oficial hackrf_spiflash. Antes se hace una copia de la flash SPI.", hr_official: "oficial (GSG)", hr_missing: "Falta el firmware oficial del HackRF – ejecute scripts/fetch_hackrf.py.", hr_confirm: "Entiendo: hackrf_spiflash sobrescribe el firmware en la flash SPI del HackRF. El dispositivo no debe desconectarse mientras tanto; antes se guarda el firmware actual en runtime\\firmware.", b_hr: "Escribir firmware oficial", hr_recovery: "Vuelta atrás: si el HackRF no responde, conéctelo manteniendo pulsado el botón DFU, cargue el archivo .dfu del release con dfu-util y vuelva a escribir (guía oficial «Recovering the SPI Flash Firmware»).", hr_phases: {"release": "Liberar HackRF", "backup": "Copia", "write": "Escribir + reinicio", "verify": "Comprobar", "done": "Fin"},
     h: 'Firmware del Pluto', intro: 'DVB-T, DVB-C, DVB-S/S2 y PAL necesitan el firmware Muxwright en el Pluto. Viene probado en el paquete. El flasheador primero lo prueba solo en RAM (la flash no se toca); solo después puedes escribirlo de forma permanente.',
     running: 'En el Pluto', none: 'ningún Pluto conectado', images: 'Firmware disponible', shipped: 'incluido', backup: 'copia',
     ok: 'verificado (md5, FIT, firma Pluto)', bad: 'no válido', tested: 'prueba RAM superada', untested: 'aún no probado en RAM',
@@ -105,6 +113,8 @@ export const FW = {
     sd_phases: { backup: 'Copia', copy: 'Copiar', verify: 'Comprobar', done: 'Fin' },
   },
   it: {
+    hr_h: "Firmware", hr_running: "In esecuzione sull'HackRF", hr_none: "nessun HackRF collegato",
+    board_hackrf: "HackRF One (firmware ufficiale, hackrf_spiflash)", hr_intro: "Per l'HackRF One, Muxwright usa solo il firmware ufficiale di Great Scott Gadgets dal pacchetto di release e lo scrive con lo strumento ufficiale hackrf_spiflash. Prima viene salvata la flash SPI.", hr_official: "ufficiale (GSG)", hr_missing: "Firmware HackRF ufficiale mancante – eseguire scripts/fetch_hackrf.py.", hr_confirm: "Ho capito: hackrf_spiflash sovrascrive il firmware nella flash SPI dell'HackRF. Nel frattempo il dispositivo non va scollegato; il firmware attuale viene prima salvato in runtime\\firmware.", b_hr: "Scrivi firmware ufficiale", hr_recovery: "Ritorno: se l'HackRF resta muto, collegarlo tenendo premuto il tasto DFU, caricare il file .dfu della release con dfu-util e riscrivere (guida ufficiale «Recovering the SPI Flash Firmware»).", hr_phases: {"release": "Rilascia HackRF", "backup": "Backup", "write": "Scrittura + riavvio", "verify": "Verifica", "done": "Fine"},
     h: 'Firmware del Pluto', intro: 'DVB-T, DVB-C, DVB-S/S2 e PAL richiedono il firmware Muxwright sul Pluto. È incluso e già testato. Il flasher lo prova prima solo in RAM (la flash non viene toccata); solo dopo puoi scriverlo in modo permanente.',
     running: 'In esecuzione sul Pluto', none: 'nessun Pluto collegato', images: 'Firmware disponibile', shipped: 'incluso', backup: 'backup',
     ok: 'verificato (md5, FIT, firma Pluto)', bad: 'non valido', tested: 'test RAM superato', untested: 'non ancora testato in RAM',
@@ -131,6 +141,8 @@ export const FW = {
     sd_phases: { backup: 'Backup', copy: 'Copia', verify: 'Verifica', done: 'Fine' },
   },
   nl: {
+    hr_h: "Firmware", hr_running: "Draait op de HackRF", hr_none: "geen HackRF verbonden",
+    board_hackrf: "HackRF One (officiële firmware, hackrf_spiflash)", hr_intro: "Voor de HackRF One gebruikt Muxwright alleen de officiële firmware van Great Scott Gadgets uit het releasepakket en schrijft die met het officiële hulpmiddel hackrf_spiflash. Eerst wordt het SPI-flash geback-upt.", hr_official: "officieel (GSG)", hr_missing: "Officiële HackRF-firmware ontbreekt – voer scripts/fetch_hackrf.py uit.", hr_confirm: "Ik begrijp het: hackrf_spiflash overschrijft de firmware in het SPI-flash van de HackRF. Het apparaat mag intussen niet worden losgekoppeld; de huidige firmware wordt eerst in runtime\\firmware bewaard.", b_hr: "Officiële firmware schrijven", hr_recovery: "Terugweg: blijft de HackRF stil, sluit hem dan aan met ingedrukte DFU-knop, laad het .dfu-bestand uit de release met dfu-util en schrijf opnieuw (officiële handleiding \"Recovering the SPI Flash Firmware\").", hr_phases: {"release": "HackRF vrijgeven", "backup": "Back-up", "write": "Schrijven + herstart", "verify": "Controleren", "done": "Einde"},
     h: 'Pluto-firmware', intro: 'Voor DVB-T, DVB-C, DVB-S/S2 en PAL heeft de Pluto de Muxwright-firmware nodig. Die zit getest in het pakket. De flasher test haar eerst alleen in het RAM (de flash blijft onaangeroerd); pas daarna kun je haar blijvend schrijven.',
     running: 'Draait op de Pluto', none: 'geen Pluto verbonden', images: 'Beschikbare firmware', shipped: 'meegeleverd', backup: 'back-up',
     ok: 'gecontroleerd (md5, FIT, Pluto-kenmerk)', bad: 'ongeldig', tested: 'RAM-test geslaagd', untested: 'nog niet in RAM getest',
@@ -157,6 +169,8 @@ export const FW = {
     sd_phases: { backup: 'Back-up', copy: 'Kopiëren', verify: 'Controle', done: 'Einde' },
   },
   pl: {
+    hr_h: "Firmware", hr_running: "Działa na HackRF", hr_none: "brak podłączonego HackRF",
+    board_hackrf: "HackRF One (oficjalne firmware, hackrf_spiflash)", hr_intro: "Dla HackRF One Muxwright używa wyłącznie oficjalnego firmware Great Scott Gadgets z pakietu wydania i zapisuje je oficjalnym narzędziem hackrf_spiflash. Wcześniej tworzona jest kopia pamięci SPI flash.", hr_official: "oficjalne (GSG)", hr_missing: "Brak oficjalnego firmware HackRF – uruchom scripts/fetch_hackrf.py.", hr_confirm: "Rozumiem: hackrf_spiflash nadpisuje firmware w pamięci SPI flash HackRF. W tym czasie nie wolno odłączać urządzenia; obecne firmware zostanie najpierw zapisane w runtime\\firmware.", b_hr: "Zapisz oficjalne firmware", hr_recovery: "Droga powrotna: jeśli HackRF milczy, podłącz go z wciśniętym przyciskiem DFU, wczytaj plik .dfu z wydania przez dfu-util i zapisz ponownie (oficjalny poradnik „Recovering the SPI Flash Firmware”).", hr_phases: {"release": "Zwolnij HackRF", "backup": "Kopia", "write": "Zapis + restart", "verify": "Sprawdzenie", "done": "Koniec"},
     h: 'Firmware Pluto', intro: 'DVB-T, DVB-C, DVB-S/S2 i PAL wymagają firmware Muxwright na Pluto. Jest w pakiecie, już przetestowany. Flasher najpierw testuje go tylko w RAM (flash pozostaje nietknięty); dopiero potem możesz zapisać go na stałe.',
     running: 'Działa na Pluto', none: 'brak podłączonego Pluto', images: 'Dostępny firmware', shipped: 'dołączony', backup: 'kopia',
     ok: 'sprawdzony (md5, FIT, sygnatura Pluto)', bad: 'nieprawidłowy', tested: 'test RAM zaliczony', untested: 'jeszcze nie testowany w RAM',

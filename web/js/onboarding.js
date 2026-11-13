@@ -15,6 +15,15 @@ const NEED = { lab: ['shielded', 'no_broadcast_radiation', 'terms', 'privacy', '
 /** Gerätezustand aus /api/state als Prüfliste */
 function checks(t) {
   const st = S.state || {}, pl = st.pluto || {}, dev = st.rf?.device || {}, rn = st.runner || st.mac || {};
+  if (st.sdr?.kind === 'hackrf') {
+    const ok = !!pl.connected && pl.fw_outdated !== true;
+    return [
+      { k: 'pluto', ok: !!pl.connected, label: t.c_hackrf, detail: pl.connected ? `${pl.model || 'HackRF One'} · libhackrf ${pl.lib || '?'}` : t.c_hackrf_no },
+      { k: 'fw', ok, warn: pl.connected && !ok, label: t.c_hfw, detail: !pl.connected ? t.c_hfw_wait : ok ? fmt(t.c_hfw_ok, { fw: pl.fw }) : fmt(t.c_hfw_old, { fw: pl.fw, rel: pl.fw_release }), hackrf: true },
+      { k: 'agent', ok: true, label: t.c_agent, detail: t.c_agent_na },
+      { k: 'runner', ok: !!rn.reachable, warn: !rn.reachable, label: t.c_runner, detail: rn.reachable ? t.c_runner_ok : t.c_runner_no },
+    ];
+  }
   const fwOk = /dablab/.test(pl.fw || '');
   const fw = pl.fw || t.unknown;
   return [
@@ -27,7 +36,7 @@ function checks(t) {
 
 /** Schritte: Willkommen, Gerät, PC-Leistung, Betriebsart, Rechtliches, Fertig */
 /** Schritte: Willkommen, Gerät, PC-Leistung, Betriebsart, Rechtliches, Komponenten, Fertig */
-const tx = lang => TXT[lang] || TXT.en;   // Einrichtungstexte; noch nicht übersetzte Sprachen → Englisch
+const tx = lang => ({ ...TXT.en, ...(TXT[lang] || {}) });   // Einrichtungstexte; fehlende Texte → Englisch
 const stepsOf = lang => { const s = tx(lang).steps; return [s[0], s[1], hwText(lang).step, s[2], s[3], (COMP[lang] || COMP.en).step, s[4]]; };
 const acceptText = (t, lang, k) => k === 'codecs' ? (COMP[lang] || COMP.en).legal : t.accept[k];
 
@@ -55,11 +64,20 @@ export function openOnboarding() {
     if (st.step === 0) {
       body = [h('h3', null, t.welcome_h), h('p', null, t.welcome_1), h('p', null, t.welcome_2), creditsPanel(st.lang)];
     } else if (st.step === 1) {
+      const kind = S.state?.sdr?.kind || 'pluto';
+      const pickSdr = async k => {
+        try { const r = await api('POST', '/api/sdr', { kind: k }); S.state.sdr = r.sdr; STD.setSdr(k); await refreshState(); }
+        catch (e) { toast(e.message, 'error', 7000); }
+        render();
+      };
       body = [h('h3', null, t.dev_h),
+        h('div.inrow.wrap', { tid: 'onb-sdr' }, h('b', null, t.sdr + ':'),
+          ...[['pluto', 'ADALM-Pluto'], ['hackrf', 'HackRF One']].map(([k, n]) => h('label.onb-item.small', null,
+            h('input', { type: 'radio', name: 'onb-sdr', tid: `onb-sdr-${k}`, checked: kind === k || null, onchange: () => pickSdr(k) }), h('span', null, n)))),
         h('ul.onb-checks', { tid: 'onb-checks' }, ch.map(c => h('li', { class: c.ok ? 'ok' : c.warn ? 'warn' : 'bad', tid: `onb-check-${c.k}` },
           icon(c.ok ? 'check' : c.warn ? 'alert' : 'x'), h('div', null, h('b', null, c.label), h('small', null, c.detail))))),
         h('div.inrow', null, h('button.btn.ghost', { type: 'button', tid: 'onb-recheck', onclick: async () => { await refreshState().catch(() => {}); render(); } }, icon('refresh'), t.recheck),
-          h('span.muted.small', null, t.dev_hint)),
+          h('span.muted.small', null, kind === 'hackrf' ? t.dev_hint_hackrf : t.dev_hint)),
         ch.find(c => c.k === 'pluto')?.ok && !ch.find(c => c.k === 'fw')?.ok ? fwPanel(st.lang, { compact: true }) : null];
     } else if (st.step === 2) {
       const ht = hwText(st.lang);
@@ -88,10 +106,11 @@ export function openOnboarding() {
       body = [componentsStep(st.lang, () => render())];
     } else {
       const fw = ch.find(c => c.k === 'fw');
+      const fwD = fw.hackrf ? t.done_hfw_d : t.done_fw_ok_d;
       body = [h('h3', null, t.done_h),
         h('ul.onb-checks', null,
           h('li.ok', null, icon('check'), h('div', null, h('b', null, st.mode === 'ham' ? fmt(t.done_ham, { cs: st.callsign }) : t.done_lab), h('small', null, t.done_legal))),
-          h('li', { class: fw.ok ? 'ok' : 'warn' }, icon(fw.ok ? 'check' : 'alert'), h('div', null, h('b', null, fw.ok ? t.done_fw_ok : t.done_fw_no), h('small', null, fw.ok ? t.done_fw_ok_d : t.done_fw_no_d)))),
+          h('li', { class: fw.ok ? 'ok' : 'warn' }, icon(fw.ok ? 'check' : 'alert'), h('div', null, h('b', null, fw.ok ? t.done_fw_ok : t.done_fw_no), h('small', null, fw.ok ? fwD : fw.hackrf ? fmt(t.c_hfw_old, { fw: S.state?.pluto?.fw || '?', rel: S.state?.pluto?.fw_release || '' }) : t.done_fw_no_d)))),
         h('p.muted.small', null, t.done_hint), creditsPanel(st.lang)];
     }
     const back = h('button.btn.ghost', { type: 'button', tid: 'onb-back', disabled: st.step === 0 || st.busy, onclick: () => { st.step--; render(); } }, t.back);

@@ -19,7 +19,7 @@ export function pageModulation() {
   const std = STD.standardOf(S.draft);
   const rateEl = h('b.mono', { tid: 'dvb-netrate' });
   const spsEl = h('b.mono', { tid: 'dvb-sps' });
-  const upd = () => { rateEl.textContent = fmtMbit(STD.netRate(S.draft)); const p = STD.requiredPath(S.draft); spsEl.textContent = `${(p.sps / 1e6).toLocaleString(LOC, { minimumFractionDigits: 3 })} MS/s`; spsEl.classList.toggle('bad', p.path === 'pluto'); };
+  const upd = () => { rateEl.textContent = fmtMbit(STD.netRate(S.draft)); const p = STD.requiredPath(S.draft); spsEl.textContent = `${(p.sps / 1e6).toLocaleString(LOC, { minimumFractionDigits: 3 })} MS/s`; spsEl.classList.toggle('bad', p.path !== 'usb'); };
   S.watchers.push(upd); upd();
   const head = h('div.bigread', null,
     h('div', null, h('small', null, T('Nutzbitrate (TS netto)')), h('span.big', null, rateEl)),

@@ -258,8 +258,23 @@ export function requiredSampleRate(cfg) {
   return Number(cfg.rf.sample_rate) || 4096000;
 }
 export const USB_MAX_SPS = 7150000;
-/** Nötiger Ausgabeweg: USB-Streaming (PC) oder Modulator/zyklischer Puffer auf dem Pluto */
+/** Aktives Sendegerät (aus state.sdr, gesetzt in core.js ingestState): 'pluto' | 'hackrf' */
+export let SDR = 'pluto';
+export const setSdr = k => { SDR = k === 'hackrf' ? 'hackrf' : 'pluto'; };
+export const HACKRF_MAX_SPS = 20000000;   // HackRF-Doku sampling_rate.rst
+/** Nötiger Ausgabeweg: 'usb' | 'pluto' (Modulator auf dem Pluto) | 'none' (mit dem HackRF nicht möglich); wie pc/standards.py choose_path */
 export function requiredPath(cfg) {
+  const p = requiredPathPluto(cfg);
+  if (SDR !== 'hackrf') return p;
+  const s = standardOf(cfg);
+  const deviceOnly = ['atsc', 'isdbt', 'dtmb', 'dvbt2', 'pal'].includes(s)
+    || (s === 'dvbc' && (['b', 'c'].includes(cfg.dvbc?.annex) || Number(cfg.dvbc?.sps) === 1))
+    || (s === 'dvbs' && cfg.dvbs?.use !== 'ham');
+  if (deviceOnly) return { path: 'none', sps: p.sps, reason: T('Mit dem HackRF nicht möglich: dieser Modulator läuft nur auf dem Pluto') };
+  if (p.sps > HACKRF_MAX_SPS) return { path: 'none', sps: p.sps, reason: T('{sps} MS/s liegt über der HackRF-Grenze von 20 MS/s', { sps: (p.sps / 1e6).toFixed(3) }) };
+  return { path: 'usb', sps: p.sps, reason: T('HackRF: Modulator am PC, IQ per USB ({sps} MS/s)', { sps: (p.sps / 1e6).toFixed(3) }) };
+}
+function requiredPathPluto(cfg) {
   const s = standardOf(cfg);
   const sps = requiredSampleRate(cfg);
   if (s === 'atsc') return { path: 'pluto', sps, reason: T('ATSC 8-VSB: Modulator auf dem Pluto ({sps} MS/s)', { sps: (sps / 1e6).toFixed(3) }) };

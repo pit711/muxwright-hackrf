@@ -120,7 +120,7 @@ function pathKey() { return `${STD.normPath(S.state.rf)}|${JSON.stringify(STD.re
 function pathBody() {
   const need = STD.requiredPath(S.draft);
   const actual = STD.normPath(S.state.rf) ?? STD.normPath({ path: S.state.tx?.rf_path ?? S.state.pluto?.path });
-  const name = p => p === 'pluto' ? T('Modulator auf dem Pluto (Firmware)') : p === 'usb' ? 'USB-Streaming (PC)' : T('unbekannt');
+  const name = p => p === 'pluto' ? T('Modulator auf dem Pluto (Firmware)') : p === 'usb' ? 'USB-Streaming (PC)' : p === 'none' ? T('mit dem HackRF nicht möglich') : T('unbekannt');
   const mismatch = actual && actual !== need.path;
   const el = h('div.pathinfo', { tid: 'rf-path' },
     h('div.rx-grid', null,

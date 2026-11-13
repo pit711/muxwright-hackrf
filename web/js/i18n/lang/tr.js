@@ -1,5 +1,21 @@
 // Muxwright-Dashboard: Türkçe
-export default {"Werkzeuge (70)":"Araçlar (70)",
+export default {"Sendegerät":"Verici",
+"Sendegerät: {name}":"Verici: {name}",
+"Welches Gerät sendet. Wechseln geht nur, wenn keine Sendung läuft.":"Hangi cihazın yayın yaptığı. Yalnızca yayın yokken değiştirilebilir.",
+"Alle Standards; DVB-S/S2, DVB-T2, PAL u. a. mit dem Modulator der Muxwright-Firmware auf dem Pluto.":"Tüm standartlar; DVB-S/S2, DVB-T2, PAL ve diğerleri Pluto üzerindeki Muxwright yazılımının modülatörüyle.",
+"Offizielle Firmware und libhackrf von Great Scott Gadgets. DAB+, UKW, DVB-T, DVB-C (Annex A) und DATV, Modulator am PC, bis 20 MS/s.":"Great Scott Gadgets'ın resmi yazılımı ve libhackrf. DAB+, FM, DVB-T, DVB-C (Annex A) ve DATV, modülatör PC'de, 20 MS/s'ye kadar.",
+"HackRF nicht verbunden":"HackRF bağlı değil",
+"Firmware älter als die offizielle {rel} – Seite „Firmware“, Gerät „HackRF One“.":"Yazılım resmi {rel} sürümünden eski – “Firmware” sayfası, cihaz “HackRF One”.",
+"Halbduplex: kein Kontrollempfang und keine RX-Vorschau während des Sendens.":"Yarı çift yönlü: yayın sırasında kontrol alımı ve RX önizlemesi yok.",
+"Dämpfung 0 … 47 dB (ZF-Verstärkung); der HF-Verstärker bleibt immer aus.":"Zayıflatma 0 … 47 dB (IF kazancı); RF yükselteci her zaman kapalı kalır.",
+"8-Bit-DAC: für DVB-C lieber 64-QAM als 256-QAM.":"8 bit DAC: DVB-C için 256-QAM yerine 64-QAM tercih edin.",
+"Windows: Der HackRF braucht den WinUSB-Treiber (z. B. mit Zadig einrichten).":"Windows: HackRF, WinUSB sürücüsüne ihtiyaç duyar (ör. Zadig ile kurun).",
+"Mit dem HackRF nicht möglich: dieser Modulator läuft nur auf dem Pluto":"HackRF ile mümkün değil: bu modülatör yalnızca Pluto'da çalışır",
+"{sps} MS/s liegt über der HackRF-Grenze von 20 MS/s":"{sps} MS/s, HackRF'nin 20 MS/s sınırının üzerinde",
+"HackRF: Modulator am PC, IQ per USB ({sps} MS/s)":"HackRF: modülatör PC'de, IQ USB üzerinden ({sps} MS/s)",
+"nur mit dem Pluto":"yalnızca Pluto ile",
+"mit dem HackRF nicht möglich":"HackRF ile mümkün değil",
+"Werkzeuge (70)":"Araçlar (70)",
 "SSH-Terminal erlauben (über diesen PC)":"SSH terminaline izin ver (bu bilgisayar üzerinden)",
 "Nur im LAN-Modus. Der Fernseher wird per PIN freigeschaltet, die nur an diesem PC unter /hbbtv/ssh-pin erscheint.":"Yalnızca LAN modunda. Televizyon, yalnızca bu bilgisayarda /hbbtv/ssh-pin altında görünen bir PIN ile eşleştirilir.",
 "Erlaubte Rechner (leer = alle im eigenen LAN)":"İzin verilen bilgisayarlar (boş = kendi LAN’daki tümü)",
@@ -1930,7 +1946,7 @@ export default {"Werkzeuge (70)":"Araçlar (70)",
 "Wiederverbindungen: {n}":"Yeniden bağlanma: {n}",
 "Ton aus dem Stream":"Yayından ses"
 };
-export const TXT = {
+export const TXT = {"c_hfw_wait":"önce HackRF'yi bağlayın","dev_hint_hackrf":"Bağlı bir HackRF olmadan devam edebilirsiniz; yayın ancak bağlandığında başlar.","sdr":"Verici","c_hackrf":"HackRF bağlı","c_hackrf_no":"HackRF bulunamadı – USB kablosunu ve WinUSB sürücüsünü (Zadig) kontrol edin.","c_hfw":"Resmi HackRF yazılımı","c_hfw_ok":"algılandı: {fw}","c_hfw_old":"{fw} yazılımı resmi {rel} sürümünden eski – “Firmware” sayfasında güncelleyin.","c_agent_na":"HackRF ile gerekmez","done_hfw_d":"USB üzerinden DAB+, FM, DVB-T, DVB-C ve DATV",
   "title": "Kurulum",
   "steps": [
     "Hoş geldiniz",

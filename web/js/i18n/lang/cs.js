@@ -1,5 +1,21 @@
 // Muxwright-Dashboard: Čeština
-export default {"Werkzeuge (70)":"Nástroje (70)",
+export default {"Sendegerät":"Vysílač",
+"Sendegerät: {name}":"Vysílač: {name}",
+"Welches Gerät sendet. Wechseln geht nur, wenn keine Sendung läuft.":"Které zařízení vysílá. Přepnout lze jen tehdy, když neprobíhá vysílání.",
+"Alle Standards; DVB-S/S2, DVB-T2, PAL u. a. mit dem Modulator der Muxwright-Firmware auf dem Pluto.":"Všechny standardy; DVB-S/S2, DVB-T2, PAL a další s modulátorem firmwaru Muxwright v Plutu.",
+"Offizielle Firmware und libhackrf von Great Scott Gadgets. DAB+, UKW, DVB-T, DVB-C (Annex A) und DATV, Modulator am PC, bis 20 MS/s.":"Oficiální firmware a libhackrf od Great Scott Gadgets. DAB+, FM, DVB-T, DVB-C (Annex A) a DATV, modulátor v PC, až 20 MS/s.",
+"HackRF nicht verbunden":"HackRF nepřipojen",
+"Firmware älter als die offizielle {rel} – Seite „Firmware“, Gerät „HackRF One“.":"Firmware je starší než oficiální {rel} – stránka „Firmware“, zařízení „HackRF One“.",
+"Halbduplex: kein Kontrollempfang und keine RX-Vorschau während des Sendens.":"Poloduplex: během vysílání žádný kontrolní příjem ani náhled RX.",
+"Dämpfung 0 … 47 dB (ZF-Verstärkung); der HF-Verstärker bleibt immer aus.":"Útlum 0 … 47 dB (zisk mf); vf zesilovač zůstává vždy vypnutý.",
+"8-Bit-DAC: für DVB-C lieber 64-QAM als 256-QAM.":"8bitový DAC: pro DVB-C raději 64-QAM než 256-QAM.",
+"Windows: Der HackRF braucht den WinUSB-Treiber (z. B. mit Zadig einrichten).":"Windows: HackRF potřebuje ovladač WinUSB (např. nainstalovat programem Zadig).",
+"Mit dem HackRF nicht möglich: dieser Modulator läuft nur auf dem Pluto":"S HackRF nelze: tento modulátor běží jen v Plutu",
+"{sps} MS/s liegt über der HackRF-Grenze von 20 MS/s":"{sps} MS/s je nad limitem HackRF 20 MS/s",
+"HackRF: Modulator am PC, IQ per USB ({sps} MS/s)":"HackRF: modulátor v PC, IQ přes USB ({sps} MS/s)",
+"nur mit dem Pluto":"jen s Plutem",
+"mit dem HackRF nicht möglich":"s HackRF nelze",
+"Werkzeuge (70)":"Nástroje (70)",
 "SSH-Terminal erlauben (über diesen PC)":"Povolit terminál SSH (přes tento počítač)",
 "Nur im LAN-Modus. Der Fernseher wird per PIN freigeschaltet, die nur an diesem PC unter /hbbtv/ssh-pin erscheint.":"Jen v režimu LAN. Televizor se páruje kódem PIN, který se zobrazí jen na tomto počítači v /hbbtv/ssh-pin.",
 "Erlaubte Rechner (leer = alle im eigenen LAN)":"Povolené počítače (prázdné = všechny ve vlastní LAN)",
@@ -1930,7 +1946,7 @@ export default {"Werkzeuge (70)":"Nástroje (70)",
 "Wiederverbindungen: {n}":"Opětovná připojení: {n}",
 "Ton aus dem Stream":"Zvuk ze streamu"
 };
-export const TXT = {
+export const TXT = {"c_hfw_wait":"nejprve připojte HackRF","dev_hint_hackrf":"Můžete pokračovat i bez připojeného HackRF; vysílat se začne až po jeho připojení.","sdr":"Vysílač","c_hackrf":"HackRF připojen","c_hackrf_no":"HackRF nenalezen – zkontrolujte kabel USB a ovladač WinUSB (Zadig).","c_hfw":"Oficiální firmware HackRF","c_hfw_ok":"rozpoznáno: {fw}","c_hfw_old":"Firmware {fw} je starší než oficiální {rel} – aktualizujte ho na stránce „Firmware“.","c_agent_na":"s HackRF není potřeba","done_hfw_d":"DAB+, FM, DVB-T, DVB-C a DATV přes USB",
  "title": "Nastavení",
  "steps": [
   "Vítejte",

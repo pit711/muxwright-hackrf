@@ -1,5 +1,21 @@
 // Muxwright-Dashboard: العربية
-export default {"Werkzeuge (70)":"أدوات (70)",
+export default {"Sendegerät":"جهاز الإرسال",
+"Sendegerät: {name}":"جهاز الإرسال: {name}",
+"Welches Gerät sendet. Wechseln geht nur, wenn keine Sendung läuft.":"أي جهاز يرسل. لا يمكن التبديل إلا عندما لا يوجد بث.",
+"Alle Standards; DVB-S/S2, DVB-T2, PAL u. a. mit dem Modulator der Muxwright-Firmware auf dem Pluto.":"كل المعايير؛ DVB-S/S2 وDVB-T2 وPAL وغيرها بمُعدِّل البرنامج الثابت Muxwright على Pluto.",
+"Offizielle Firmware und libhackrf von Great Scott Gadgets. DAB+, UKW, DVB-T, DVB-C (Annex A) und DATV, Modulator am PC, bis 20 MS/s.":"البرنامج الثابت الرسمي وlibhackrf من Great Scott Gadgets. DAB+ وFM وDVB-T وDVB-C (Annex A) وDATV، المُعدِّل على الحاسوب، حتى 20 MS/s.",
+"HackRF nicht verbunden":"HackRF غير متصل",
+"Firmware älter als die offizielle {rel} – Seite „Firmware“, Gerät „HackRF One“.":"البرنامج الثابت أقدم من الإصدار الرسمي {rel} – صفحة «البرنامج الثابت»، الجهاز «HackRF One».",
+"Halbduplex: kein Kontrollempfang und keine RX-Vorschau während des Sendens.":"نصف مزدوج: لا استقبال للمراقبة ولا معاينة RX أثناء الإرسال.",
+"Dämpfung 0 … 47 dB (ZF-Verstärkung); der HF-Verstärker bleibt immer aus.":"التوهين 0 … 47 dB (كسب IF)؛ مضخم RF يبقى دائمًا مطفأً.",
+"8-Bit-DAC: für DVB-C lieber 64-QAM als 256-QAM.":"محول DAC بدقة 8 بت: لـ DVB-C يُفضَّل 64-QAM على 256-QAM.",
+"Windows: Der HackRF braucht den WinUSB-Treiber (z. B. mit Zadig einrichten).":"Windows: يحتاج HackRF إلى برنامج تشغيل WinUSB (مثلًا التثبيت عبر Zadig).",
+"Mit dem HackRF nicht möglich: dieser Modulator läuft nur auf dem Pluto":"غير ممكن مع HackRF: هذا المُعدِّل يعمل على Pluto فقط",
+"{sps} MS/s liegt über der HackRF-Grenze von 20 MS/s":"{sps} MS/s أعلى من حد HackRF البالغ 20 MS/s",
+"HackRF: Modulator am PC, IQ per USB ({sps} MS/s)":"HackRF: المُعدِّل على الحاسوب، IQ عبر USB ({sps} MS/s)",
+"nur mit dem Pluto":"مع Pluto فقط",
+"mit dem HackRF nicht möglich":"غير ممكن مع HackRF",
+"Werkzeuge (70)":"أدوات (70)",
 "SSH-Terminal erlauben (über diesen PC)":"السماح بطرفية SSH (عبر هذا الحاسوب)",
 "Nur im LAN-Modus. Der Fernseher wird per PIN freigeschaltet, die nur an diesem PC unter /hbbtv/ssh-pin erscheint.":"في وضع الشبكة المحلية فقط. يُقرن التلفزيون برمز PIN يظهر فقط على هذا الحاسوب في ‎/hbbtv/ssh-pin.",
 "Erlaubte Rechner (leer = alle im eigenen LAN)":"الأجهزة المسموح بها (فارغ = جميع أجهزة الشبكة المحلية)",
@@ -1930,7 +1946,7 @@ export default {"Werkzeuge (70)":"أدوات (70)",
 "Wiederverbindungen: {n}":"عمليات إعادة الاتصال: {n}",
 "Ton aus dem Stream":"الصوت من البث"
 };
-export const TXT = {
+export const TXT = {"c_hfw_wait":"وصّل HackRF أولًا","dev_hint_hackrf":"يمكنك المتابعة دون HackRF متصل؛ لا يبدأ الإرسال إلا بعد توصيله.","sdr":"جهاز الإرسال","c_hackrf":"HackRF متصل","c_hackrf_no":"لم يُعثر على HackRF – افحص كابل USB وبرنامج تشغيل WinUSB ‏(Zadig).","c_hfw":"البرنامج الثابت الرسمي لـ HackRF","c_hfw_ok":"تم اكتشاف: {fw}","c_hfw_old":"البرنامج الثابت {fw} أقدم من الإصدار الرسمي {rel} – حدّثه من صفحة «البرنامج الثابت».","c_agent_na":"غير مطلوب مع HackRF","done_hfw_d":"DAB+ وFM وDVB-T وDVB-C وDATV عبر USB",
   "title": "الإعداد الأولي",
   "steps": [
     "مرحبًا",
