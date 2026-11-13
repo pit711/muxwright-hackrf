@@ -65,3 +65,4 @@ pc/device_files/rrc_dvbc_5*_0.1*_128.fir
 pc/hackrf_bin/
 pc/hackrf_bin.new/
 .claude/
+CLAUDE.md

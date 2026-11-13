@@ -1,6 +1,10 @@
-# Muxwright
+# Muxwright – HackRF edition
 
-**Multi-standard test transmitter for the ADALM-Pluto (PlutoSDR).** One Pluto, one dashboard: DAB+, FM with RDS,
+> This is a fork of [Muxwright](https://github.com/pit711/muxwright) that adds the **HackRF One** as a second
+> transmitter, using only the official firmware, library and tools from Great Scott Gadgets. Everything below about
+> the Pluto still applies; the HackRF part is described in [HackRF One support](#hackrf-one-support).
+
+**Multi-standard test transmitter for the ADALM-Pluto (PlutoSDR) and the HackRF One.** One Pluto, one dashboard: DAB+, FM with RDS,
 DVB-T, DVB-C, DVB-S/S2 (SD to UHD/HDR10), analogue PAL and amateur-radio DATV for QO-100 – with a monitoring receiver
 on the Pluto's own RX input, expected/actual reports and printable test records. Since Beta 0.3 also ATSC, ISDB-T/Tb,
 DTMB, J.83 B/C, NTSC-M/J, PAL-M/N and RBDS; since Beta 0.4 DVB-T2 (marked *untested* until verified with real
@@ -22,8 +26,42 @@ This repository contains the complete source. There are no binary releases here 
 
 ---
 
+## HackRF One support
+
+Choose the transmitter in **Settings → Transmitter** or in the setup step *Device & firmware* (or start the server
+with `--sdr hackrf`). The HackRF has no processor of its own, so the PC modulates and streams the IQ samples over USB.
+
+| | ADALM-Pluto | HackRF One (this fork) |
+|---|---|---|
+| **Standards** | all | DAB/DAB+, FM + RDS, DVB-T (6/7/8 MHz), DVB-C Annex A, DVB-S/S2 for amateur-radio DATV |
+| **Not available** | – | PAL/NTSC loops, DVB-T2, ATSC, ISDB-T, DTMB, J.83 B/C, broadcast DVB-S/S2 – their modulators run only inside the Pluto firmware; the control room locks those tiles and says why |
+| **Sample rate** | up to 7 MS/s over USB | up to 20 MS/s; sources below 8 MS/s are interpolated by an integer factor (GSG recommends ≥ 8 MS/s) |
+| **Level** | attenuation 0 … 89.75 dB | IF gain 0 … 47 dB (shown as attenuation 0 … 47 dB); the RF amplifier is **never** switched on |
+| **Monitoring receiver / RX preview** | yes | no – the HackRF is half duplex |
+| **Firmware** | Muxwright firmware (RAM test, flash) | official GSG firmware, written with the official `hackrf_spiflash` after a backup of the SPI flash |
+| **DAC** | 12 bit | 8 bit – for DVB-C prefer 64-QAM over 256-QAM |
+
+Software used, all from Great Scott Gadgets and fetched by `scripts/fetch_hackrf.py` (nothing of it is stored in
+this repository):
+
+- firmware `hackrf_one_usb.bin` / `.dfu` from release [v2026.01.3](https://github.com/greatscottgadgets/hackrf/releases/tag/v2026.01.3)
+- `hackrf.dll` (libhackrf, BSD-3-Clause), `hackrf_info`, `hackrf_spiflash`, `hackrf_transfer` (GPL-2.0) from GSG's
+  official Windows CI build ("hackrf-tools-windows", as linked from their installation guide)
+
+On Windows the HackRF needs the **WinUSB** driver (install it once with [Zadig](https://zadig.akeo.ie/), device
+"HackRF One"). Check with `pc\hackrf_bin\hackrf_info.exe`.
+
+**Verification so far:** offline only. The device class, the TX stream and the firmware update run against a fake
+libhackrf that consumes USB transfers in real time (`pc/test_hackrf_offline.py`, 69 checks: interpolation, int8
+levels, gain mapping, mute, half-duplex rules, the full server chain DAB → USB and DVB-T 8 MHz, the `hackrf_spiflash`
+sequence). The real `hackrf.dll` is loaded and opened in the tests, but **no transmission on a real HackRF One has been
+measured yet** – reports are welcome.
+
+---
+
 ## Contents
 
+0. [HackRF One support](#hackrf-one-support)
 1. [What it does](#what-it-does)
 2. [How it works](#how-it-works)
 3. [Standards in detail](#standards-in-detail)
@@ -163,13 +201,25 @@ PAL test pattern as decoded by the Pluto's own RX input:
 
 | | Minimum | Recommended |
 |---|---|---|
+| **SDR (HackRF)** | HackRF One with the official GSG firmware (2026.01.3 is shipped by `scripts/fetch_hackrf.py`), WinUSB driver | genuine HackRF One with a 0.5 ppm TCXO |
 | **SDR** | ADALM-Pluto **Rev. B** with the AD9364 unlock (70 MHz–6 GHz). Fishball/PlutoSky 7010 (AD9363): SD card firmware built in (Beta 0.7.1, not yet tested on hardware). Rev. C and other AD9363 clones ("PlutoSDR development board", Pluto+) are untested; DAB+/FM over USB usually work, the modulator firmware has not been verified on them | original ADALM-Pluto Rev. B |
 | **PC** | Windows 10 (2004+) / 11, 64-bit, WSL2 (virtualisation enabled in the BIOS), 8 GB RAM. Any 2-core CPU for DAB+/FM/SD | 6 cores / 12 threads for HD H.264 (x264), 16 cores or an NVIDIA GPU with NVENC (Turing or newer) for UHD/HDR10 |
 | **Cabling** | SMA → F (satellite IF, plus a **DC block** – receivers feed 13/18 V) or SMA → IEC (DVB-T/C, FM, PAL), 20–50 dB of attenuators | RF shielding box for antenna tests |
 
 ### What you need
 
-A PlutoSDR and a few RF parts for a cabled, shielded setup. The links below are affiliate links (Amazon, AliExpress) – they help fund
+**HackRF One** – a few RF parts for a cabled, shielded setup and one of these. The links are affiliate links
+(Amazon) – they help fund the project, the price is the same for you.
+
+| **HackRF One bundle (Nooelec)** | **HackRF One complete bundle with TCXO (Nooelec)** | **HackRF R9 clone with PortaPack H2M** |
+|:---:|:---:|:---:|
+| genuine Great Scott Gadgets HackRF One, ANT500 antenna and SMA adapters | genuine HackRF One with a 0.5 ppm TCXO in an aluminium case – the stable clock helps DAB and DVB receivers lock | a clone, not made by Great Scott Gadgets; runs the official firmware over USB, the PortaPack screen is not used by Muxwright |
+| [View on Amazon](https://muxwright.com/go/hackrf) | [View on Amazon](https://muxwright.com/go/hackrf-tcxo) | [View on Amazon](https://muxwright.com/go/hackrf-r9) |
+
+Great Scott Gadgets lists all official resellers on [their HackRF One page](https://greatscottgadgets.com/hackrf/one/).
+The cables, attenuators and the DC block below are the same for both transmitters.
+
+**PlutoSDR** – a PlutoSDR and a few RF parts for a cabled, shielded setup. The links below are affiliate links (Amazon, AliExpress) – they help fund
 the project, the price is the same for you.
 
 | <a href="https://muxwright.com/go/pluto"><img src="https://muxwright.com/amzimg/pluto" width="170" alt="PlutoSDR-compatible SDR, 70 MHz – 6 GHz"></a> | <a href="https://muxwright.com/go/pluto-ali"><img src="https://muxwright.com/aliimg/pluto-ali" width="170" alt="PlutoSky R2 SDR, 70 MHz – 6 GHz"></a> |
@@ -191,6 +241,9 @@ Cabling and protection – always transmit through attenuators into the receiver
 The full list of adapters, attenuators and QO-100 gear is on the [hardware page](https://muxwright.com/#hardware).
 
 ## Installation
+
+The Windows installer on the website is the Pluto edition. The HackRF edition currently runs from source – see
+[Running from source](#running-from-source); everything else (setup, components, dashboard) is the same.
 
 1. Request the installer at https://muxwright.com/download.html. You confirm your e-mail address and that you use
    Muxwright only in a shielded lab; the download link arrives by e-mail. Run `Muxwright-Setup-0.4-beta.exe`
@@ -218,6 +271,8 @@ handles the rest. Useful start options: `Muxwright.exe --min-atten 40` (never lo
 pc/            Windows server: HTTP API + SSE, Pluto control (pylibiio), monitoring receivers, setup, flasher, logs
   server.py      API, configuration, TX state machine, safety logic
   pluto.py       libiio: LO, sample rate, attenuation, IQ streaming, read-back
+  hackrf.py      libhackrf (ctypes): same interface as pluto.py, interpolation to >= 8 MS/s, int8 IQ, TX callback
+  hackrf_bin/    official GSG firmware and Windows tools (not in Git, filled by scripts/fetch_hackrf.py)
   device.py      on-device modulators via the firmware agent and SSH
   rxdecode.py    monitoring: welle-cli, redsea, gr-dtv, PAL/DVB-S2 decoders (run in WSL)
   setup.py       component installation with per-component licence consent (runtime/components.json)
@@ -237,6 +292,7 @@ pluto_fw/      Firmware: build.sh (Buildroot external), br2ext/, agent/ (HTTP :8
                  rrc_fir_gen,
                  libdvbmod; tests/ with gr-dtv, gr-isdbt and dtmb-sdr comparisons
 wsl/           setup_components.sh – idempotent component installer used by the setup
+scripts/       fetch_hackrf.py – official HackRF firmware and tools with versions and SHA-256 (VERSIONS.json)
 launcher/      PyInstaller launcher (Muxwright.exe); Python, numpy, scipy and pylibiio are bundled, pc/ is loaded at run time
 test/          Playwright UI tests against the mock server, installer end-to-end test, muted device-chain test, i18n checks
 ```
@@ -252,6 +308,23 @@ cd pc
 python server.py --min-atten 40
 :: dashboard: http://127.0.0.1:8792/
 ```
+
+With a HackRF One:
+
+```bat
+:: once: official firmware + Windows tools from Great Scott Gadgets into pc\hackrf_bin (needs the GitHub CLI "gh", logged in)
+python scripts\fetch_hackrf.py
+cd pc
+python server.py --sdr hackrf --min-atten 20
+```
+
+`--sdr` is remembered in `runtime/sdr.json`; the dashboard can switch the device while nothing is on air.
+
+Without the GitHub CLI: download the release zip from the GSG releases page and copy `firmware-bin/hackrf_one_usb.bin`
+to `pc/hackrf_bin/firmware/` (or run `python scripts/fetch_hackrf.py --no-windows`), and put `hackrf.dll`,
+`libusb-1.0.dll` and `pthreadVC3.dll` from any official HackRF Windows build (for example radioconda, as recommended
+in GSG's installation guide) into `pc/hackrf_bin`, or point `MUXWRIGHT_HACKRF_DIR` at their folder. On Linux the
+distribution package `libhackrf0` is used.
 
 The server expects the WSL distribution `dablab` (Ubuntu 24.04). Create it with the dashboard's setup, or by hand:
 
@@ -292,8 +365,9 @@ The dashboard talks to `pc/server.py` over plain JSON; everything it does you ca
 | `GET /api/events` | server-sent events: state, log, TX statistics |
 | `POST /api/check` | offline render + decode, expected/actual report |
 | `GET/POST /api/onboarding` | setup state, confirmations, operating mode |
+| `GET/POST /api/sdr` | transmitter `pluto` \| `hackrf` (switch only while idle; the answer lists config errors under the new device) |
 | `GET /api/setup` · `POST /api/setup/install` | components, licence-confirmed installation |
-| `GET/POST /api/firmware` | images, RAM test, backup, flash |
+| `GET/POST /api/firmware` | images, RAM test, backup, flash; `{"action": "spiflash", "confirm": true}` writes the official HackRF firmware |
 | `GET /api/hwcheck[?bench=1]` · `GET /api/logs` · `GET /api/shop` | PC rating, daily log files, hardware links |
 
 `SPEC.md` is the binding description of the configuration schema and the interfaces between server, runner and
@@ -305,6 +379,8 @@ firmware agent.
 python test/test_ui_mock.py            :: Playwright run of the whole dashboard against test/mock_server.py (German UI)
 node test/i18n_check.mjs               :: every T('…') text present in all 20 languages, placeholders intact
 python pc/test_flasher_offline.py      :: flasher with fake dfu-util and fake SSH
+python pc/test_hackrf_offline.py       :: HackRF: device class, TX stream, API and full server chain against a fake libhackrf,
+                                       :: hackrf_spiflash sequence; never touches a real HackRF
 python pc/test_api_offline.py         :: server validation incl. every standard (channel plans, rates, output path)
 python test/installer_e2e.py --setup Muxwright-Setup-0.4-beta.exe
                                        :: silent install, fresh WSL distro, full setup via Playwright, self-test,
@@ -330,6 +406,10 @@ All modulators run in real time on the Pluto's two Cortex-A9 cores; the new ones
 transmitter muted (0 underflows). None of the Beta 0.3 and 0.4 additions has been verified with a consumer receiver yet.
 
 ## Licences and codecs
+
+HackRF: libhackrf is BSD-3-Clause, the hackrf tools and firmware are GPL-2.0 (Great Scott Gadgets). They are not part
+of this repository; `scripts/fetch_hackrf.py` downloads them from the official sources and stores the licence texts
+next to them in `pc/hackrf_bin`. Muxwright is not affiliated with Great Scott Gadgets.
 
 * **Muxwright code** – MIT (`LICENSE`): server, dashboard, runner, modulators, firmware additions, flasher.
 * **`runner/fm`** (FM/RDS) – **GPL-3.0**, because it was written after PiFmRds, PiFmAdv, MiniRDS and gr-rds
