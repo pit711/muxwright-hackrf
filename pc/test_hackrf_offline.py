@@ -252,7 +252,8 @@ def e2e_tests():
         s, r = req("/api/config", DVBT8, "PUT")
         check("e2e: DVB-T 8 MHz accepted (usb)", s == 200 and req("/api/state")[1]["rf"]["path"] == "usb", (s, r))
         s, r = req("/api/tx/start", {})
-        st = wait(lambda s, f: s["tx"]["state"] == "running" and f.get("streaming"))
+        st = wait(lambda s, f: s["tx"]["state"] == "running" and f.get("streaming") and abs((f.get("rate") or 0) - 9142857) < 2
+                  and f.get("freq_last") == 474000000, 45)
         f = fake()
         check("e2e: DVB-T 8 MHz streams at 9,142857 MS/s (no interpolation)", abs((f.get("rate") or 0) - 9142857) < 2 and f.get("freq_last") == 474000000, (s, r, st["tx"], f))
         s, r = req("/api/sdr", {"kind": "pluto"})
