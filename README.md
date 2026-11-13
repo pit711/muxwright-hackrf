@@ -217,25 +217,14 @@ PAL test pattern as decoded by the Pluto's own RX input:
 | [View on Amazon](https://muxwright.com/go/hackrf) | [View on Amazon](https://muxwright.com/go/hackrf-tcxo) | [View on Amazon](https://muxwright.com/go/hackrf-r9) |
 
 Great Scott Gadgets lists all official resellers on [their HackRF One page](https://greatscottgadgets.com/hackrf/one/).
-The cables, attenuators and the DC block below are the same for both transmitters.
-
-**PlutoSDR** – a PlutoSDR and a few RF parts for a cabled, shielded setup. The links below are affiliate links (Amazon, AliExpress) – they help fund
-the project, the price is the same for you.
-
-| <a href="https://muxwright.com/go/pluto"><img src="https://muxwright.com/amzimg/pluto" width="170" alt="PlutoSDR-compatible SDR, 70 MHz – 6 GHz"></a> | <a href="https://muxwright.com/go/pluto-ali"><img src="https://muxwright.com/aliimg/pluto-ali" width="170" alt="PlutoSky R2 SDR, 70 MHz – 6 GHz"></a> |
-|:---:|:---:|
-| **PlutoSDR-compatible SDR** | **PlutoSky R2 (Zynq 7020, AD9361)** |
-| 70 MHz – 6 GHz, Zynq + AD936x – a clone, not the original ADALM-Pluto Rev. B | 2T2R clone by OpenSourceSDRLab; DAB+/FM over USB usually work, the modulator firmware is untested on it |
-| [View on Amazon](https://muxwright.com/go/pluto) | [View on AliExpress](https://muxwright.com/go/pluto-ali) |
-
-The original ADALM-Pluto Rev. B (the board Muxwright is verified on) is sold by Analog Devices and its distributors.
+For the ADALM-Pluto see the [original Muxwright](https://github.com/pit711/muxwright#hardware).
 
 Cabling and protection – always transmit through attenuators into the receiver or a shielded box:
 
 | <a href="https://muxwright.com/go/att30"><img src="https://muxwright.com/amzimg/att30" width="140" alt="SMA attenuator 30 dB, 6 GHz"></a> | <a href="https://muxwright.com/go/dcblock"><img src="https://muxwright.com/amzimg/dcblock" width="140" alt="SMA DC block, 6 GHz"></a> | <a href="https://muxwright.com/go/sma"><img src="https://muxwright.com/amzimg/sma" width="140" alt="SMA cable male–male"></a> | <a href="https://muxwright.com/go/satf"><img src="https://muxwright.com/amzimg/satf" width="140" alt="Adapter SMA male to F female"></a> |
 |:---:|:---:|:---:|:---:|
 | **Attenuator 30 dB** | **DC block** | **SMA cable** | **SMA → F adapter** |
-| SMA, DC – 6 GHz; stack 20–50 dB in front of the receiver | protects the Pluto from the 13/18 V LNB feed of satellite receivers | short male–male leads | DVB-S/S2 into the satellite input |
+| SMA, DC – 6 GHz; stack 20–50 dB in front of the receiver | protects the SDR from the 13/18 V LNB feed of satellite receivers | short male–male leads | DVB-S/S2 into the satellite input |
 | [View on Amazon](https://muxwright.com/go/att30) | [View on Amazon](https://muxwright.com/go/dcblock) | [View on Amazon](https://muxwright.com/go/sma) | [View on Amazon](https://muxwright.com/go/satf) |
 
 The full list of adapters, attenuators and QO-100 gear is on the [hardware page](https://muxwright.com/#hardware).
