@@ -4,3 +4,5 @@
 wsl/** text=auto eol=lf
 runner/** text=auto eol=lf
 pluto_fw/** text=auto eol=lf
+docs/teletext/*.tti -text
+hbbtv_apps/doom/COPYING-freedoom.txt -text
