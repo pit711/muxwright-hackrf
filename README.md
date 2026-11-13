@@ -1,8 +1,11 @@
-# Muxwright – HackRF edition
+# Muxwright – HackRF edition (alpha)
 
 > This is a fork of [Muxwright](https://github.com/pit711/muxwright) that adds the **HackRF One** as a second
 > transmitter, using only the official firmware, library and tools from Great Scott Gadgets. Everything below about
 > the Pluto still applies; the HackRF part is described in [HackRF One support](#hackrf-one-support).
+>
+> **Status: alpha 1** – the HackRF support has not yet been tested on real HackRF hardware. Windows installer:
+> [request it on the website](https://muxwright.com/download.html?p=hackrf) (choose *HackRF edition alpha 1*).
 
 **Multi-standard test transmitter for the ADALM-Pluto (PlutoSDR) and the HackRF One.** One Pluto, one dashboard: DAB+, FM with RDS,
 DVB-T, DVB-C, DVB-S/S2 (SD to UHD/HDR10), analogue PAL and amateur-radio DATV for QO-100 – with a monitoring receiver
@@ -231,8 +234,11 @@ The full list of adapters, attenuators and QO-100 gear is on the [hardware page]
 
 ## Installation
 
-The Windows installer on the website is the Pluto edition. The HackRF edition currently runs from source – see
-[Running from source](#running-from-source); everything else (setup, components, dashboard) is the same.
+**HackRF edition alpha 1:** on https://muxwright.com/download.html?p=hackrf choose *Muxwright HackRF edition alpha 1*
+(`Muxwright-HackRF-Setup-0.7.1-alpha1.exe`, about 110 MB, SHA-256 `67895a3586c5a6a04ac6eea50e9ce8f9217d7a346e330412c8e35f94a82638f6`).
+It installs into its own folder (`Muxwright HackRF`, program `Muxwright-HackRF.exe`) with its own WSL distribution
+`muxwright-hackrf`, so it runs next to an installed Pluto edition, and it ships the official Great Scott Gadgets files in
+`pc\hackrf_bin`. The HackRF is the preselected transmitter; the steps below are otherwise the same.
 
 1. Request the installer at https://muxwright.com/download.html. You confirm your e-mail address and that you use
    Muxwright only in a shielded lab; the download link arrives by e-mail. Run `Muxwright-Setup-0.4-beta.exe`
