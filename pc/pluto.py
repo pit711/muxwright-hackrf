@@ -61,6 +61,10 @@ class PlutoError(Exception):
 
 
 class Pluto:
+    kind = "pluto"
+    full_duplex = True
+    clamp_gain = staticmethod(clamp_gain)
+
     def __init__(self, uri="usb:", log=print):
         self.uri = uri
         self.log = log
@@ -71,7 +75,7 @@ class Pluto:
         self.adc = None
         self.info = {"connected": False, "uri": uri, "fw": None, "temp_c": None,
                      "lo_hz": None, "rx_lo_hz": None, "atten_db": None, "model": None,
-                     "serial": None, "error": None}
+                     "serial": None, "error": None, "kind": "pluto"}
         self.fs = None
         self.rx_busy = False
         self.ctl_retries = 0

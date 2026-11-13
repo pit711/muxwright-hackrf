@@ -189,7 +189,29 @@ USB_MAX_SPS = 7_000_000
 DVBS2_MAX_SR = {"QPSK": 22_000_000, "8PSK": 15_000_000}
 
 
+# Aktives Sendegerät (setzt der Server): "pluto" | "hackrf". Der HackRF kennt nur den USB-Pfad.
+ACTIVE_SDR = "pluto"
+HACKRF_MAX_SPS = 20_000_000          # HackRF-Doku sampling_rate.rst: bis 20 MS/s
+
+
+def usb_max_sps():
+    return HACKRF_MAX_SPS if ACTIVE_SDR == "hackrf" else USB_MAX_SPS
+
+
 def choose_path(c, std):
+    """-> (path, reason). Pluto: 'usb' | 'device'. HackRF: 'usb' oder 'none' (nicht möglich, reason sagt warum)."""
+    if ACTIVE_SDR != "hackrf":
+        return _choose_path_pluto(c, std)
+    path, why = _choose_path_pluto(dict(c, rf=dict(c.get("rf") or {}, path="usb")), std)
+    if path == "device" or "FIR" in why:
+        return "none", f"Mit dem HackRF nicht möglich – {why}"
+    sr = int((c.get("rf") or {}).get("sample_rate") or 0)
+    if std not in ("dab", "fm") and not 0 < sr <= HACKRF_MAX_SPS:
+        return "none", f"{sr / 1e6:.3f} MS/s über der HackRF-Grenze {HACKRF_MAX_SPS / 1e6:g} MS/s"
+    return "usb", f"HackRF: Modulator am PC, IQ per USB ({sr / 1e6:.3f} MS/s)"
+
+
+def _choose_path_pluto(c, std):
     """-> (path, reason). 'usb' = IQ via libiio from the PC, 'device' = modulator on the Pluto (TS via UDP).
     rf.path in the config: 'auto' (default) | 'usb' | 'device' (alias 'pluto')."""
     rf = c.get("rf") or {}

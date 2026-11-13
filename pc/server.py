@@ -34,6 +34,7 @@ from scipy.signal import fftconvolve, resample_poly, welch   # import early: a l
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pluto as plutomod  # noqa: E402
+import hackrf as hackrfmod  # noqa: E402
 import rxproc  # noqa: E402
 import playlists  # noqa: E402
 import standards  # noqa: E402
@@ -62,6 +63,8 @@ PRESETS = os.path.join(HERE, "presets")
 PLDIR = os.path.join(RUNTIME, "playlists")
 VIDEO_SUB = "video"
 CONFIG_FILE = os.path.join(RUNTIME, "pc_config.json")
+SDR_FILE = os.path.join(RUNTIME, "sdr.json")                 # gewähltes Sendegerät {"kind": "pluto"|"hackrf"}
+SDR_KINDS = ("pluto", "hackrf")
 DEVICE_MOD_FILE = os.path.join(RUNTIME, "device_mod.json")   # PID des zuletzt von uns gestarteten Gerätemodulators
 ONBOARDING_FILE = os.path.join(RUNTIME, "onboarding.json")
 # Einrichtung beim ersten Start: Version erhöhen, wenn sich Rechtstexte/Bestätigungen ändern (dann erneut zustimmen)
@@ -69,6 +72,24 @@ ONBOARDING_VERSION = 2      # 2: Bestätigung „codecs“ (Fremdkomponenten sel
 ONBOARDING_ACCEPT = {"lab": ["shielded", "no_broadcast_radiation", "terms", "privacy", "codecs"],
                      "ham": ["shielded", "no_broadcast_radiation", "terms", "privacy", "codecs", "ham_license", "ham_rules"]}
 CALLSIGN_RE = re.compile(r"^(?=.*\d)[A-Z0-9]{1,3}\d[A-Z0-9]{0,3}[A-Z](/[A-Z0-9]{1,4})?$")
+
+
+def sdr_load(override=None):
+    """Chosen transmitter: --sdr/MUXWRIGHT_SDR, else runtime/sdr.json, else 'pluto'."""
+    if override in SDR_KINDS:
+        return override
+    try:
+        with open(SDR_FILE, encoding="utf-8") as f:
+            k = (json.load(f) or {}).get("kind")
+        return k if k in SDR_KINDS else "pluto"
+    except (OSError, ValueError):
+        return "pluto"
+
+
+def sdr_save(kind):
+    os.makedirs(RUNTIME, exist_ok=True)
+    with open(SDR_FILE, "w", encoding="utf-8") as f:
+        json.dump({"kind": kind}, f)
 
 
 def onboarding_load():
@@ -394,8 +415,14 @@ def validate_config(cfg):
         path, why = standards.choose_path(c, std)
         if path == "usb" and std == "dvbc" and int((c.get("dvbc") or {}).get("sps", 2)) == 1:
             errs.append("rf.path usb: DVB-C mit sps 1 braucht das RRC-FIR im AD9361 – sps 2 wählen oder rf.path auto/device")
-        if path == "usb" and std in standards.DVB and int(c["rf"].get("sample_rate") or 0) > standards.USB_MAX_SPS:
+        if path == "none":
+            errs.append(why)
+        if path == "usb" and std in standards.DVB and int(c["rf"].get("sample_rate") or 0) > standards.usb_max_sps():
             errs.append(f"rf.path usb: {why} – rf.path auf auto/device stellen")
+        if standards.ACTIVE_SDR == "hackrf" and hackrfmod.TXVGA_MAX_DB < float(c["rf"].get("atten_db") or 0) < -MUTE_DB:
+            warns.append(f"HackRF: Dämpfung nur 0 … {hackrfmod.TXVGA_MAX_DB} dB – es wird {hackrfmod.TXVGA_MAX_DB} dB verwendet")
+        if standards.ACTIVE_SDR == "hackrf" and std == "dvbc" and "256" in str((c.get("dvbc") or {}).get("qam", "")):
+            warns.append("HackRF: 8-Bit-DAC – 256-QAM hat wenig MER-Reserve, 64-QAM ist robuster")
         if str((c.get("rf") or {}).get("path") or "auto").lower() not in ("auto", "usb", "device", "pluto"):
             errs.append("rf.path: auto | usb | device")
         c["_path"], c["_path_reason"] = path, why
@@ -789,13 +816,16 @@ class App:
             self.backend = LocalBackend(args.runner or WIN_RUNNER)
         else:
             self.backend = WslBackend(args.wsl_distro) if args.backend == "wsl" else SshBackend(args.ssh_host)
-        self.agent = agentmod.Agent(args.agent) if args.agent and args.agent.lower() != "off" else None
+        self.sdr_kind = sdr_load(args.sdr)
+        standards.ACTIVE_SDR = self.sdr_kind
+        self.agent = (agentmod.Agent(args.agent) if args.agent and args.agent.lower() != "off"
+                      and self.sdr_kind == "pluto" else None)
         self.agent_status = None        # last /api/status of dablab-agent (None = unreachable / off)
         self.agent_t = 0
         self.device = None              # active device-path session {cmd,args,port,pid,started,unf0}
         self.jobs = {}                  # youtube jobs
         self._job_n = 0
-        self.pluto = plutomod.Pluto(args.uri, log=lambda lvl, m: log(lvl, m, "pluto"))
+        self.pluto = self.make_sdr(self.sdr_kind)       # Name bleibt "pluto": beide Geräte haben dieselbe Schnittstelle
         self.cfg = self._load_config()
         self.stream = None
         self.proc = None
@@ -849,6 +879,45 @@ class App:
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(self.runner_config(), f, indent=2, ensure_ascii=False)
         os.replace(tmp, CONFIG_FILE)
+
+    def make_sdr(self, kind):
+        if kind == "hackrf":
+            return hackrfmod.HackRF(log=lambda lvl, m: log(lvl, m, "hackrf"))
+        return plutomod.Pluto(self.args.uri, log=lambda lvl, m: log(lvl, m, "pluto"))
+
+    def set_sdr(self, kind):
+        """Switch the transmitter (only while idle) and persist the choice in runtime/sdr.json.
+        -> (http status, body); body.errors = config errors under the new device (e.g. standard only on the Pluto)."""
+        if kind not in SDR_KINDS:
+            return 400, {"ok": False, "error": f"Gerät: {' | '.join(SDR_KINDS)}"}
+        with self.lock:
+            if self.stream is not None or self.device is not None or self.tx_state == "starting":
+                return 409, {"ok": False, "error": "Erst die Sendung stoppen, dann das Gerät wechseln"}
+            if kind != self.sdr_kind:
+                try:
+                    self.pluto.close()
+                except Exception:
+                    pass
+                self.sdr_kind = kind
+                standards.ACTIVE_SDR = kind
+                self.agent = (agentmod.Agent(self.args.agent) if kind == "pluto" and self.args.agent
+                              and self.args.agent.lower() != "off" else None)
+                self.agent_status = None
+                self.pluto = self.make_sdr(kind)
+                self.gain_applied = None
+                log("info", f"Sendegerät: {kind}")
+            sdr_save(kind)
+            c, errs = validate_config(self.public_cfg())
+            if not errs:
+                self.cfg = c
+            else:
+                self.cfg["_path"], self.cfg["_path_reason"] = standards.choose_path(self.cfg, self.standard)
+            return 200, {"ok": True, "sdr": self.sdr_info(), "errors": errs}
+
+    def sdr_info(self):
+        return {"kind": self.sdr_kind, "kinds": list(SDR_KINDS), "full_duplex": self.pluto.full_duplex,
+                "device_path": self.sdr_kind == "pluto", "usb_max_sps": standards.usb_max_sps(),
+                "lib_error": hackrfmod.lib_error() if self.sdr_kind == "hackrf" else None}
 
     def runner_config(self):
         """Config as the runner reads it: for DVB the output follows the chosen path
@@ -946,7 +1015,7 @@ class App:
         rf = self.cfg["rf"]
         if rf.get("enabled") and self.running() and not self.closing:
             att = max(float(rf["atten_db"]), float(self.args.min_atten))
-            want = plutomod.clamp_gain(att)
+            want = self.pluto.clamp_gain(att)
         else:
             want = MUTE_DB
         if force or self.gain_applied != want:
@@ -1050,8 +1119,12 @@ class App:
             if path == "device":
                 if self.agent is None or self.agent_status is None:
                     return 503, {"ok": False, "error": "dablab-agent auf dem Pluto nicht erreichbar (rf.path device)"}
+            elif path == "none":
+                return 400, {"ok": False, "error": self.cfg.get("_path_reason") or "mit diesem Gerät nicht möglich"}
             elif not self.pluto.connected and not self.pluto.connect():
-                return 503, {"ok": False, "error": "Pluto nicht verbunden"}
+                name = "HackRF" if self.sdr_kind == "hackrf" else "Pluto"
+                why = self.pluto.info.get("error")
+                return 503, {"ok": False, "error": f"{name} nicht verbunden" + (f" ({why})" if why else "")}
             self.tx_state, self.tx_since, self.tx_error = "starting", time.time(), None
             self.session = None
         worker = self._tx_start_device if path == "device" else self._tx_start_worker
@@ -1181,7 +1254,7 @@ class App:
 
     def devssh(self):
         """SSH helper for the Pluto (deploy files, stray processes, RX capture); None with --no-device-ssh."""
-        if self.args.no_device_ssh:
+        if self.args.no_device_ssh or self.sdr_kind != "pluto":
             return None
         if getattr(self, "_dev", None) is None:
             self._dev = devicemod.Device(self.args.device_host if self.args.device_host not in ("127.0.0.1", "localhost")
@@ -1390,7 +1463,8 @@ class App:
             lo, nco, _ = self.rf_plan(self.cfg["rf"])
             half_bw = {"dvbt": 0.5e6 * int((self.cfg.get("dvbt") or {}).get("bandwidth_mhz") or 8) * 0.95,
                        "dvbc": 0.575 * int((self.cfg.get("dvbc") or {}).get("symbol_rate") or 6900000)}.get(self.standard, 0.85e6)
-            st = plutomod.TxStream(self.pluto, self.proc, fs, log=lambda l, m: log(l, m, "tx"), nco_hz=nco, half_bw=half_bw,
+            stream_cls = hackrfmod.TxStream if self.sdr_kind == "hackrf" else plutomod.TxStream
+            st = stream_cls(self.pluto, self.proc, fs, log=lambda l, m: log(l, m, "tx"), nco_hz=nco, half_bw=half_bw,
                                    nsamp=self.args.nsamp, kbufs=self.args.kbufs,
                                    qchunks=max(4, (1 << 21) // self.args.nsamp), prefill=max(2, (1 << 20) // self.args.nsamp),
                                    on_fail=self._on_stream_fail)
@@ -1593,7 +1667,7 @@ class App:
                                 except Exception as e:
                                     log("warn", f"LO: {e}")
                     if self.stream is not None:
-                        self.tx_error = "Pluto getrennt"
+                        self.tx_error = ("HackRF" if self.sdr_kind == "hackrf" else "Pluto") + " getrennt"
                         self._teardown("error")
                 elif now - last_poll > 2:
                     last_poll = now
@@ -1862,7 +1936,7 @@ class App:
                 "dvb": self.cfg.get("_dvb"), "jobs": jobs,
                 "tx": tx, "pluto": pi, "mac": mac,
                 "log": lg, "check": self.check, "monitor": self.monitor, "sweep": self.sweep,
-                "onboarding": onboarding_load(),
+                "onboarding": onboarding_load(), "sdr": self.sdr_info(),
                 "server": {"t": time.time(), "lan": self.args.lan, "port": self.args.port, "pid": os.getpid(),
                            "runtime": RUNTIME, "rx_uri": self.args.rx_uri, "rx_mode": self.args.rx_mode}}
 
@@ -2046,6 +2120,9 @@ class App:
         gain = float(body.get("rx_gain_db", 30))
         if not 0.5 <= secs <= 30:
             return 400, {"ok": False, "errors": ["seconds: 0,5–30"]}
+        if not self.pluto.full_duplex:
+            return 409, {"ok": False, "code": "half_duplex",
+                         "error": "HackRF ist halbduplex: kein Kontrollempfang während des Sendens (zweiten Empfänger nutzen)"}
         if self.foreign_mod():
             return 409, {"ok": False, "error": "Auf dem Pluto läuft ein fremder Modulator – kein Kontrollempfang"}
         if self.device is not None or self.path() == "device":
@@ -2847,6 +2924,8 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/api/logs":
                 q = parse_qs(u.query)
                 return self._send(200, logs_api(q.get("file", [""])[0], q.get("lang", ["de"])[0], q.get("level", [""])[0]))
+            if p == "/api/sdr":
+                return self._send(200, dict(APP.sdr_info(), ok=True))
             if p == "/api/hwcheck":
                 q = parse_qs(u.query)
                 return self._send(200, hwcheck.detect(bench_run=q.get("bench", ["0"])[0] == "1"))
@@ -3043,6 +3122,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(*APP.tx_start(force=bool((body or {}).get("force"))))
             if p == "/api/onboarding":
                 return self._send(*onboarding_save(body))
+            if p == "/api/sdr":
+                return self._send(*APP.set_sdr(str(body.get("kind") or "")))
             if p == "/api/firmware":
                 b = body or {}
                 return self._send(*FLASHER.start(str(b.get("action") or ""), b.get("image"), confirm=b.get("confirm") is True,
@@ -3133,6 +3214,8 @@ def main():
     ap.add_argument("--port", type=int, default=8792)
     ap.add_argument("--lan", action="store_true", help="zusätzlich im LAN erreichbar (0.0.0.0)")
     ap.add_argument("--uri", default=os.environ.get("DABLAB_PLUTO_URI", "usb:"))
+    ap.add_argument("--sdr", choices=SDR_KINDS, default=os.environ.get("MUXWRIGHT_SDR") or None,
+                    help="Sendegerät (Standard: zuletzt gewählt, runtime/sdr.json, sonst pluto)")
     ap.add_argument("--backend", choices=["wsl", "ssh", "local"], default=os.environ.get("DABLAB_BACKEND", "wsl"))
     ap.add_argument("--runner", default=None, help="nur --backend local: Pfad zu dablab_run.py (oder Testattrappe)")
     ap.add_argument("--agent", default=os.environ.get("DABLAB_AGENT", "http://192.168.2.1:8080"),
@@ -3176,12 +3259,13 @@ def main():
         pass
     args.min_atten = max(0.0, min(89.75, args.min_atten))
     if args.runtime:
-        global RUNTIME, MEDIA, RXDIR, CONFIG_FILE, PLDIR, PLSTORE, ONBOARDING_FILE, LOGDIR, DEVICE_MOD_FILE
+        global RUNTIME, MEDIA, RXDIR, CONFIG_FILE, PLDIR, PLSTORE, ONBOARDING_FILE, LOGDIR, DEVICE_MOD_FILE, SDR_FILE
         RUNTIME = os.path.abspath(args.runtime)
         MEDIA, RXDIR, PLDIR = (os.path.join(RUNTIME, d) for d in ("media", "rx", "playlists"))
         CONFIG_FILE = os.path.join(RUNTIME, "pc_config.json")
         ONBOARDING_FILE = os.path.join(RUNTIME, "onboarding.json")
         DEVICE_MOD_FILE = os.path.join(RUNTIME, "device_mod.json")
+        SDR_FILE = os.path.join(RUNTIME, "sdr.json")
         LOGDIR = os.path.join(RUNTIME, "logs")
         PLSTORE = playlists.Store(PLDIR, MEDIA)
 
