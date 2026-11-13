@@ -220,6 +220,8 @@ PAL test pattern as decoded by the Pluto's own RX input:
 | [View on Amazon](https://muxwright.com/go/hackrf) | [View on Amazon](https://muxwright.com/go/hackrf-tcxo) | [View on Amazon](https://muxwright.com/go/hackrf-r9) |
 
 Great Scott Gadgets lists all official resellers on [their HackRF One page](https://greatscottgadgets.com/hackrf/one/).
+From Europe the two Nooelec links open an Amazon search on amazon.de instead – the genuine bundles are currently not
+sold there, and Amazon would otherwise redirect to an unrelated product.
 For the ADALM-Pluto see the [original Muxwright](https://github.com/pit711/muxwright#hardware).
 
 Cabling and protection – always transmit through attenuators into the receiver or a shielded box:
