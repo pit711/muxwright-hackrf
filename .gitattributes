@@ -1,0 +1,6 @@
+# Was in WSL oder auf dem Pluto läuft, braucht LF – auch bei einem Windows-Checkout mit core.autocrlf=true
+*.sh text eol=lf
+*.patch text eol=lf
+wsl/** text=auto eol=lf
+runner/** text=auto eol=lf
+pluto_fw/** text=auto eol=lf
